@@ -1,1 +1,1 @@
-teserractOCR - per page, translate -> per paragraph translation -> save jadi buku
+teserractOCR - per page scan -> background -> translate -> per paragraph translation -> save jadi buku
