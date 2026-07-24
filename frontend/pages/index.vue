@@ -146,6 +146,29 @@
             </div>
           </div>
 
+          <!-- ── Full translation ── -->
+          <div v-if="translating" class="bg-white rounded-lg shadow-sm border border-amber-100 p-4">
+            <h2 class="text-base font-bold text-gray-700 mb-2">Terjemahan Lengkap</h2>
+            <p class="text-sm text-gray-400 italic">Menerjemahkan...</p>
+          </div>
+          <div v-if="translation" class="bg-white rounded-lg shadow-sm border border-amber-100 p-4">
+            <h2 class="text-base font-bold text-gray-700 mb-2">Terjemahan Lengkap</h2>
+            <div class="grid md:grid-cols-2 gap-3">
+              <div>
+                <p class="text-xs text-gray-400 mb-1">Teks Arab (dengan Harakat):</p>
+                <div class="bg-gray-50 rounded border border-gray-100 p-3 text-right" dir="rtl">
+                  <p class="text-base font-arabic text-amber-900">{{ result.harakat }}</p>
+                </div>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400 mb-1">Bahasa Indonesia:</p>
+                <div class="bg-blue-50 border border-blue-200 rounded p-3">
+                  <p class="text-sm text-blue-800">{{ translation }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- ── Summary table ── -->
           <details class="bg-white rounded-lg shadow-sm border border-amber-100 p-3 group">
             <summary class="cursor-pointer text-emerald-700 hover:text-emerald-900
@@ -221,9 +244,9 @@ interface AnalyzeResponse {
 const inputText = ref('')
 const result = ref<AnalyzeResponse | null>(null)
 const loading = ref(false)
-const error = ref<string | null>(null)
-
-const config = useRuntimeConfig()
+const error = ref<string | null>(null)  const config = useRuntimeConfig()
+const translating = ref(false)
+const translation = ref<string | null>(null)
 
 const posColors: Record<string, string> = {
   noun: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
@@ -263,10 +286,43 @@ async function analyze() {
     })
     if (!res.ok) throw new Error(`Error: ${res.status}`)
     result.value = await res.json()
+
+    // Also request sentence translation (non-blocking)
+    translateText(inputText.value)
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Gagal menghubungi server'
   } finally {
     loading.value = false
+  }
+}
+
+let _translateId = 0
+
+async function translateText(text: string) {
+  const requestId = ++_translateId
+  translating.value = true
+  translation.value = null
+  try {
+    const res = await fetch(`${config.public.apiBase}/api/translate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: `Error: ${res.status}` }))
+      // Don't show error for translation — it's a bonus feature
+      console.warn('Translation error:', err.detail)
+      return
+    }
+    const data = await res.json()
+    // Discard stale responses from previous requests
+    if (requestId !== _translateId) return
+    translation.value = data.translation
+  } catch (e) {
+    // Translation is optional — silently fail
+    console.warn('Translation unavailable:', e)
+  } finally {
+    translating.value = false
   }
 }
 

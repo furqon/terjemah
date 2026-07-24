@@ -278,6 +278,44 @@ def analyze_words(text: str) -> AnalyzeResponse:
     )
 
 
+# ── NLLB-200 Translation ───────────────────────────────────────────
+# Lazy-loaded: model downloads (~1.2GB) on first /api/translate request.
+
+_nllb_lock = threading.Lock()
+_nllb_tokenizer = None
+_nllb_model = None
+
+
+def _load_nllb():
+    """Load NLLB-200 distilled 600M model (lazy, on first use).
+
+    First call downloads ~1.2GB from HuggingFace Hub.
+    Subsequent calls use cached model.
+    """
+    global _nllb_tokenizer, _nllb_model
+    with _nllb_lock:
+        if _nllb_model is not None:
+            return
+        try:
+            from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+            model_name = "facebook/nllb-200-distilled-600M"
+            _nllb_tokenizer = AutoTokenizer.from_pretrained(model_name)
+            _nllb_tokenizer.src_lang = "arb_Arab"  # Source: Arabic
+            _nllb_model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+        except Exception as e:
+            raise RuntimeError(f"Failed to load NLLB model: {e}")
+
+
+class TranslateRequest(BaseModel):
+    text: str
+
+
+class TranslateResponse(BaseModel):
+    source: str
+    translation: str
+    model: str = "nllb-200-distilled-600M"
+
+
 # ── API endpoints ───────────────────────────────────────────────────
 
 @app.get("/api/health")
@@ -296,3 +334,26 @@ def tashkeel(request: TashkeelRequest):
 def analyze(request: AnalyzeRequest):
     """Get harakat + word-by-word analysis (lemma, root, POS, gloss)."""
     return analyze_words(request.text)
+
+
+@app.post("/api/translate", response_model=TranslateResponse)
+def translate(request: TranslateRequest):
+    """Translate Arabic to Indonesian using NLLB-200.
+
+    First call downloads model (~1.2GB); subsequent calls are fast.
+    """
+    if not request.text.strip():
+        return TranslateResponse(source=request.text, translation="")
+    try:
+        _load_nllb()
+        inputs = _nllb_tokenizer(request.text, return_tensors="pt", truncation=True, max_length=512)
+        translated_tokens = _nllb_model.generate(
+            **inputs,
+            forced_bos_token_id=_nllb_tokenizer.convert_tokens_to_ids("ind_Latn"),
+            max_length=512,
+        )
+        result = _nllb_tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)[0]
+        return TranslateResponse(source=request.text, translation=result)
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=str(e))
