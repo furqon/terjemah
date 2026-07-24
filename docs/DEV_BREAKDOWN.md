@@ -990,8 +990,8 @@ sentencepiece>=0.1.99
 ```
 Step 1:  Project setup            ✅  ▶  fastapi + nuxt running
 Step 2:  Frontend tashkeel        ✅  ▶  Paste → harakat in browser
-Step 3:  Backend analysis         ☐  ▶  API returns words + pos
-Step 4:  Show word cards          ☐  ▶  Cards with lemma/root/pos
+Step 3:  Backend analysis         ✅  ▶  API returns words + pos
+Step 4:  Show word cards          ✅  ▶  Cards with lemma/root/pos
 Step 5:  Dictionary/gloss         ☐  ▶  Indonesian per word
 Step 6:  NLLB translation         ☐  ▶  Full sentence translated
 Step 7:  Scholar display          ☐  ▶  Beautiful kitab layout
