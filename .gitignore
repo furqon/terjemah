@@ -34,3 +34,7 @@ Thumbs.db
 # Temp / generated
 backend/startup_debug.log
 backend/*.pyc
+
+# PDF OCR feature
+backend/ocr_texts.db
+backend/uploads/
