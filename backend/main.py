@@ -369,6 +369,20 @@ class OCRTranslatePageRequest(BaseModel):
     text: str  # The user-edited Arabic text
 
 
+class OCRSavePageRequest(BaseModel):
+    page_id: int
+    text: str  # The edited Arabic text to save
+
+
+class OCRTashkeelPageRequest(BaseModel):
+    text: str  # Arabic text to diacritize
+
+
+class OCRTashkeelPageResponse(BaseModel):
+    original: str
+    harakat: str
+
+
 class OCRTranslatePage(BaseModel):
     page_number: int
     translation_id: str = ""
@@ -625,6 +639,41 @@ def ocr_translate_page(request: OCRTranslatePageRequest):
         translation_id=tid,
         translation_en=ten,
     )
+
+
+@app.post("/api/ocr/save-page")
+def ocr_save_page(request: OCRSavePageRequest):
+    """Save edited Arabic text for a page without translating.
+
+    The user can fix OCR mistakes and save the corrected text
+    to the database before running tashkeel or translate.
+    """
+    page_row = ocr_db.get_page_by_id(request.page_id)
+    if not page_row:
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    ocr_db.save_page(
+        page_row["pdf_id"],
+        page_row["page_number"],
+        page_row.get("raw_text", ""),
+        request.text,
+        page_row.get("confidence", 0.0),
+    )
+    return {"status": "saved", "page_id": request.page_id}
+
+
+@app.post("/api/ocr/tashkeel-page", response_model=OCRTashkeelPageResponse)
+def ocr_tashkeel_page(request: OCRTashkeelPageRequest):
+    """Add harakat (diacritics) to OCR text using CAMeL Tools.
+
+    Tesseract OCR output often lacks diacritics. This endpoint
+    runs the existing CAMeL Tools diacritization pipeline on the
+    text so users see proper harakat before translating.
+    """
+    if not request.text.strip():
+        return OCRTashkeelPageResponse(original=request.text, harakat=request.text)
+    result = diacritize(request.text)
+    return OCRTashkeelPageResponse(original=request.text, harakat=result)
 
 
 @app.post("/api/ocr/delete/{pdf_id}")

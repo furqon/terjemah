@@ -1,136 +1,65 @@
 <template>
   <div class="min-h-screen" style="background: #f5f0e8">
-    <!-- ── Traditional header ── -->
+    <!-- ── Header ── -->
     <header class="relative overflow-hidden" style="background: linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 50%, #1a3a2a 100%)">
       <div class="h-2" style="background: repeating-linear-gradient(90deg, #c9a84c 0px, #c9a84c 4px, #1a3a2a 4px, #1a3a2a 6px, #c9a84c 6px, #c9a84c 10px, #1a3a2a 10px, #1a3a2a 12px);"></div>
       <div class="h-1" style="background: linear-gradient(90deg, transparent 0%, #c9a84c 20%, #c9a84c 80%, transparent 100%); opacity: 0.5;"></div>
-
       <div class="max-w-4xl mx-auto px-4 py-5 text-center relative">
         <div class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl opacity-30 select-none" style="color: #c9a84c">﴿</div>
         <div class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl opacity-30 select-none" style="color: #c9a84c">﴾</div>
-
-        <h1 class="text-2xl font-bold tracking-wide" style="font-family: 'Amiri', 'Traditional Arabic', serif; color: #f5f0e8;">
-          Penerjemah Kitab
-        </h1>
-        <p class="text-xs mt-1 tracking-wider" style="color: #c9a84c;">
-          ✦ Analisis + OCR + Terjemahan ✦
-        </p>
+        <h1 class="text-2xl font-bold tracking-wide" style="font-family: 'Amiri', 'Traditional Arabic', serif; color: #f5f0e8;">Penerjemah Kitab</h1>
+        <p class="text-xs mt-1 tracking-wider" style="color: #c9a84c;">✦ Analisis + OCR + Terjemahan ✦</p>
       </div>
-
       <div class="h-1" style="background: linear-gradient(90deg, transparent 0%, #c9a84c 20%, #c9a84c 80%, transparent 100%); opacity: 0.5;"></div>
     </header>
 
     <main class="max-w-4xl mx-auto px-4 py-4">
       <!-- ── Tab Navigation ── -->
       <div class="flex gap-0 border-b mb-4" style="border-color: #d4c5a9;">
-        <button
-          @click="activeTab = 'analyze'"
-          class="px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200 relative"
-          :style="activeTab === 'analyze'
-            ? { background: '#fffdf5', color: '#2d5a3d', border: '1px solid #d4c5a9', borderBottom: '1px solid #fffdf5', marginBottom: '-1px' }
-            : { color: '#a0896a', border: '1px solid transparent', cursor: 'pointer' }"
-        >
-          <span class="flex items-center gap-1.5">
-            <span>📖</span> Analisis Teks
-          </span>
-        </button>
-        <button
-          @click="activeTab = 'scan'"
-          class="px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200 relative"
-          :style="activeTab === 'scan'
-            ? { background: '#fffdf5', color: '#2d5a3d', border: '1px solid #d4c5a9', borderBottom: '1px solid #fffdf5', marginBottom: '-1px' }
-            : { color: '#a0896a', border: '1px solid transparent', cursor: 'pointer' }"
-        >
-          <span class="flex items-center gap-1.5">
-            <span>📄</span> Scan PDF
-          </span>
-        </button>
+        <button @click="activeTab = 'analyze'" class="px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200 relative"
+          :style="activeTab === 'analyze' ? { background: '#fffdf5', color: '#2d5a3d', border: '1px solid #d4c5a9', borderBottom: '1px solid #fffdf5', marginBottom: '-1px' } : { color: '#a0896a', border: '1px solid transparent' }"
+        ><span class="flex items-center gap-1.5"><span>📖</span> Analisis Teks</span></button>
+        <button @click="activeTab = 'scan'" class="px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200 relative"
+          :style="activeTab === 'scan' ? { background: '#fffdf5', color: '#2d5a3d', border: '1px solid #d4c5a9', borderBottom: '1px solid #fffdf5', marginBottom: '-1px' } : { color: '#a0896a', border: '1px solid transparent' }"
+        ><span class="flex items-center gap-1.5"><span>📄</span> Scan PDF</span></button>
       </div>
 
-      <!-- ════════════ TAB 1: ANALISIS TEKS ════════════ -->
+      <!-- ════ TAB 1: ANALISIS ════ -->
       <div v-if="activeTab === 'analyze'">
         <div class="mb-3 rounded-lg" style="background: #fffdf5; border: 1px solid #e8dcc8; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <div class="p-3">
-            <label class="block text-xs font-medium mb-1 tracking-wider" style="color: #8b7355;">
-              Tulis Teks Arab
-            </label>
-            <textarea
-              v-model="inputText"
-              placeholder="يكتب الطالب الدرس في المكتبة..."
-              class="w-full h-24 p-3 rounded-lg text-base font-arabic transition-colors resize-y"
+            <label class="block text-xs font-medium mb-1 tracking-wider" style="color: #8b7355;">Tulis Teks Arab</label>
+            <textarea v-model="inputText" placeholder="يكتب الطالب الدرس في المكتبة..." dir="rtl" class="w-full h-24 p-3 rounded-lg text-base font-arabic transition-colors resize-y"
               style="background: #faf8f0; border: 1px solid #e0d5c0; color: #3a2a1a;"
-              dir="rtl"
-              @focus="$event.target.style.borderColor = '#c9a84c'"
-              @blur="$event.target.style.borderColor = '#e0d5c0'"
-            ></textarea>
-
-            <button
-              @click="analyze"
-              :disabled="loading || !inputText.trim()"
+              @focus="$event.target.style.borderColor = '#c9a84c'" @blur="$event.target.style.borderColor = '#e0d5c0'"></textarea>
+            <button @click="analyze" :disabled="loading || !inputText.trim()"
               class="mt-2 w-full font-medium py-2 px-4 rounded-lg text-sm tracking-wider transition-all duration-200 disabled:cursor-not-allowed"
               style="background: linear-gradient(135deg, #2d5a3d, #1a3a2a); color: #f5f0e8;"
               :style="loading || !inputText.trim() ? { opacity: 0.5 } : {}"
-              @mouseenter="($event) => { if (!loading && inputText.trim()) { $event.target.style.background = 'linear-gradient(135deg, #3a7a4d, #2d5a3d)' } }"
+              @mouseenter="($event) => { if (!loading && inputText.trim()) $event.target.style.background = 'linear-gradient(135deg, #3a7a4d, #2d5a3d)' }"
               @mouseleave="($event) => { $event.target.style.background = 'linear-gradient(135deg, #2d5a3d, #1a3a2a)' }"
-            >
-              <span v-if="loading" class="flex items-center justify-center gap-1.5">
-                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>
-                Memproses...
-              </span>
-              <span v-else>{{ '☾' }} Analisis Teks</span>
-            </button>
+            ><span v-if="loading" class="flex items-center justify-center gap-1.5"><svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Memproses...</span><span v-else>{{ '☾' }} Analisis Teks</span></button>
           </div>
         </div>
-
-        <!-- Error -->
-        <Transition
-          enter-active-class="transition duration-300 ease-out"
-          enter-from-class="opacity-0 -translate-y-2"
-          leave-active-class="transition duration-200 ease-in"
-          leave-to-class="opacity-0 -translate-y-2"
-        >
-          <div
-            v-if="error"
-            class="px-3 py-2 rounded-lg mb-3 text-sm"
-            style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;"
-          >
-            {{ error }}
-          </div>
+        <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 -translate-y-2" leave-active-class="transition duration-200 ease-in" leave-to-class="opacity-0 -translate-y-2">
+          <div v-if="error" class="px-3 py-2 rounded-lg mb-3 text-sm" style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;">{{ error }}</div>
         </Transition>
-
-        <!-- Result -->
-        <Transition
-          enter-active-class="transition duration-400 ease-out"
-          enter-from-class="opacity-0 translate-y-4"
-        >
+        <Transition enter-active-class="transition duration-400 ease-out" enter-from-class="opacity-0 translate-y-4">
           <div v-if="result" class="space-y-3">
-            <!-- Kitab page display -->
+            <!-- Kitab page display (existing analyze result) -->
             <div class="relative overflow-hidden rounded-lg" style="background: #fffdf5; border: 1px solid #d4c5a9; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
               <div class="h-1" style="background: linear-gradient(90deg, #d4c5a9 0%, #c9a84c 30%, #c9a84c 70%, #d4c5a9 100%);"></div>
               <div class="text-center pt-4 pb-2 px-4">
                 <div class="text-xs tracking-widest" style="color: #8b7355;">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
                 <div class="mt-1" style="border-top: 1px solid #e8dcc8; width: 60px; margin-left: auto; margin-right: auto;"></div>
-                <div class="mt-2 flex items-center justify-center gap-2 text-xs" style="color: #a0896a;">
-                  <span>▸</span>
-                  <span class="tracking-wider">Teks Arab</span>
-                  <span>◂</span>
-                </div>
+                <div class="mt-2 flex items-center justify-center gap-2 text-xs" style="color: #a0896a;"><span>▸</span><span class="tracking-wider">Teks Arab</span><span>◂</span></div>
               </div>
               <div class="mx-4 p-4 text-center rounded" style="background: #faf8f0; border: 1px solid #e0d5c0;">
                 <div class="flex flex-wrap justify-center gap-x-4 gap-y-1" dir="rtl">
-                  <span
-                    v-for="(word, i) in result.words"
-                    :key="'ar-'+i"
+                  <span v-for="(word, i) in result.words" :key="'ar-'+i"
                     class="text-3xl md:text-4xl font-arabic leading-relaxed transition-all duration-200 hover:scale-105 hover:text-[#c9a84c] cursor-default"
-                    style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif; text-shadow: 0 1px 1px rgba(0,0,0,0.05);"
-                    :title="word.gloss_id"
-                  >
-                    {{ word.word }}
-                    <span v-if="i < result.words.length - 1" class="text-lg opacity-30 select-none" style="color: #a0896a;"> </span>
-                  </span>
+                    style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif; text-shadow: 0 1px 1px rgba(0,0,0,0.05);" :title="word.gloss_id"
+                  >{{ word.word }}<span v-if="i < result.words.length - 1" class="text-lg opacity-30 select-none" style="color: #a0896a;"> </span></span>
                 </div>
               </div>
               <div class="flex items-center justify-center gap-2 px-4 py-3" style="color: #c9a84c;">
@@ -139,39 +68,21 @@
                 <span style="border-top: 1px solid; flex: 1; max-width: 60px; opacity: 0.5;"></span>
               </div>
               <div class="text-center px-4 pb-2">
-                <button
-                  @click="copyResult"
-                  class="text-[10px] tracking-wider py-1 px-3 rounded transition-all duration-200"
+                <button @click="copyResult" class="text-[10px] tracking-wider py-1 px-3 rounded transition-all duration-200"
                   style="color: #8b7355; border: 1px solid #e0d5c0; background: #faf8f0;"
-                  @mouseenter="$event.target.style.background = '#f5f0e0'"
-                  @mouseleave="$event.target.style.background = '#faf8f0'"
-                >Salin Teks</button>
+                  @mouseenter="$event.target.style.background = '#f5f0e0'" @mouseleave="$event.target.style.background = '#faf8f0'">Salin Teks</button>
               </div>
               <div class="px-4 pb-1">
-                <div class="flex items-center justify-center gap-2 text-xs" style="color: #a0896a;">
-                  <span>▸</span>
-                  <span class="tracking-wider">Analisis Per Kata</span>
-                  <span>◂</span>
-                </div>
+                <div class="flex items-center justify-center gap-2 text-xs" style="color: #a0896a;"><span>▸</span><span class="tracking-wider">Analisis Per Kata</span><span>◂</span></div>
               </div>
               <div class="px-4 pb-4">
                 <div class="flex flex-wrap justify-center gap-1" style="direction: rtl;">
-                  <div
-                    v-for="(word, i) in result.words"
-                    :key="i"
-                    class="word-card flex flex-col items-center rounded-sm transition-all duration-300"
-                    style="direction: ltr; min-width: 90px; max-width: 130px; flex: 1 0 auto;"
-                  >
+                  <div v-for="(word, i) in result.words" :key="i" class="word-card flex flex-col items-center rounded-sm transition-all duration-300" style="direction: ltr; min-width: 90px; max-width: 130px; flex: 1 0 auto;">
                     <div class="w-full text-center px-1.5 py-1.5" style="background: #faf8f0;">
-                      <p class="text-xl font-arabic leading-tight transition-colors duration-200" dir="rtl" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">
-                        {{ word.word }}
-                      </p>
+                      <p class="text-xl font-arabic leading-tight" dir="rtl" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ word.word }}</p>
                       <p class="text-[11px] font-medium mt-0.5" style="color: #5a7a4a;">{{ word.lemma }}</p>
                       <p v-if="word.root && word.root !== '—'" class="text-[9px]" style="color: #a0896a;">({{ word.root }})</p>
-                      <span
-                        class="inline-block mt-[2px] px-1.5 py-[1px] rounded-sm text-[9px] font-bold"
-                        :class="posBadgeClass(word.pos_type)"
-                      >{{ word.pos_arabic }}</span>
+                      <span class="inline-block mt-[2px] px-1.5 py-[1px] rounded-sm text-[9px] font-bold" :class="posBadgeClass(word.pos_type)">{{ word.pos_arabic }}</span>
                       <div class="mt-1 leading-tight">
                         <p v-if="word.gloss_id" class="text-[10px] font-medium" style="color: #3a7a4d;" title="Indonesian">{{ word.gloss_id }}</p>
                         <p v-if="word.gloss_en" class="text-[9px]" style="color: #6a8aaa;" title="English">{{ word.gloss_en }}</p>
@@ -186,67 +97,30 @@
               </div>
               <div class="h-1" style="background: linear-gradient(90deg, #d4c5a9 0%, #c9a84c 30%, #c9a84c 70%, #d4c5a9 100%);"></div>
             </div>
-
-            <!-- Translation -->
-            <div v-if="translating" class="rounded-lg p-4 text-center" style="background: #fffdf5; border: 1px solid #d4c5a9;">
-              <p class="text-sm italic" style="color: #a0896a;">Menerjemahkan...</p>
-            </div>
+            <div v-if="translating" class="rounded-lg p-4 text-center" style="background: #fffdf5; border: 1px solid #d4c5a9;"><p class="text-sm italic" style="color: #a0896a;">Menerjemahkan...</p></div>
             <div v-if="translation" class="rounded-lg overflow-hidden" style="background: #fffdf5; border: 1px solid #d4c5a9;">
               <div class="h-1" style="background: linear-gradient(90deg, #d4c5a9 0%, #3a7a4d 30%, #3a7a4d 70%, #d4c5a9 100%);"></div>
               <div class="p-4">
-                <div class="flex items-center justify-center gap-2 text-xs mb-3" style="color: #a0896a;">
-                  <span>▸</span>
-                  <span class="tracking-wider">Terjemahan Lengkap</span>
-                  <span>◂</span>
-                </div>
+                <div class="flex items-center justify-center gap-2 text-xs mb-3" style="color: #a0896a;"><span>▸</span><span class="tracking-wider">Terjemahan Lengkap</span><span>◂</span></div>
                 <div class="space-y-3">
-                  <div class="text-right" dir="rtl">
-                    <p class="text-[10px] tracking-wider mb-1" style="color: #8b7355;">TEKS ARAB</p>
-                    <p class="text-xl font-arabic leading-relaxed" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ result.harakat }}</p>
-                  </div>
+                  <div class="text-right" dir="rtl"><p class="text-[10px] tracking-wider mb-1" style="color: #8b7355;">TEKS ARAB</p><p class="text-xl font-arabic leading-relaxed" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ result.harakat }}</p></div>
                   <div style="border-top: 1px dashed #e0d5c0;"></div>
-                  <div>
-                    <p class="text-[10px] tracking-wider mb-1" style="color: #3a7a4d;">BAHASA INDONESIA</p>
-                    <p class="text-base leading-relaxed" style="color: #2a4a3a;">{{ translation.translation_id }}</p>
-                  </div>
+                  <div><p class="text-[10px] tracking-wider mb-1" style="color: #3a7a4d;">BAHASA INDONESIA</p><p class="text-base leading-relaxed" style="color: #2a4a3a;">{{ translation.translation_id }}</p></div>
                   <div style="border-top: 1px dashed #e0d5c0;"></div>
-                  <div>
-                    <p class="text-[10px] tracking-wider mb-1" style="color: #4a6a8a;">ENGLISH</p>
-                    <p class="text-base leading-relaxed" style="color: #2a3a4a;">{{ translation.translation_en }}</p>
-                  </div>
+                  <div><p class="text-[10px] tracking-wider mb-1" style="color: #4a6a8a;">ENGLISH</p><p class="text-base leading-relaxed" style="color: #2a3a4a;">{{ translation.translation_en }}</p></div>
                 </div>
               </div>
             </div>
-
-            <!-- Detail table -->
             <details class="group rounded-lg overflow-hidden" style="background: #fffdf5; border: 1px solid #d4c5a9;">
               <summary class="cursor-pointer px-4 py-2.5 text-xs tracking-wider font-medium flex items-center justify-between transition-colors" style="color: #5a7a4a;">
-                <span class="flex items-center gap-1.5">
-                  <span class="transition-transform duration-200 group-open:rotate-90 text-sm" style="color: #c9a84c;">▸</span>
-                  Detail Lengkap
-                </span>
+                <span class="flex items-center gap-1.5"><span class="transition-transform duration-200 group-open:rotate-90 text-sm" style="color: #c9a84c;">▸</span> Detail Lengkap</span>
                 <span style="color: #a0896a;">{{ result.word_count }} kata</span>
               </summary>
               <div class="px-4 pb-3 overflow-x-auto">
                 <table class="w-full text-xs border-collapse">
-                  <thead>
-                    <tr style="border-bottom: 1px solid #e0d5c0;">
-                      <th class="p-2 text-left font-medium" style="color: #8b7355;">#</th>
-                      <th class="p-2 text-right font-medium" style="color: #8b7355;">Arab</th>
-                      <th class="p-2 text-left font-medium" style="color: #8b7355;">Lemma</th>
-                      <th class="p-2 text-left font-medium" style="color: #8b7355;">Akar</th>
-                      <th class="p-2 text-left font-medium" style="color: #8b7355;">Jenis</th>
-                      <th class="p-2 text-left font-medium" style="color: #8b7355;">ID</th>
-                      <th class="p-2 text-left font-medium" style="color: #8b7355;">EN</th>
-                    </tr>
-                  </thead>
+                  <thead><tr style="border-bottom: 1px solid #e0d5c0;"><th class="p-2 text-left font-medium" style="color: #8b7355;">#</th><th class="p-2 text-right font-medium" style="color: #8b7355;">Arab</th><th class="p-2 text-left font-medium" style="color: #8b7355;">Lemma</th><th class="p-2 text-left font-medium" style="color: #8b7355;">Akar</th><th class="p-2 text-left font-medium" style="color: #8b7355;">Jenis</th><th class="p-2 text-left font-medium" style="color: #8b7355;">ID</th><th class="p-2 text-left font-medium" style="color: #8b7355;">EN</th></tr></thead>
                   <tbody>
-                    <tr
-                      v-for="(word, i) in result.words" :key="'t'+i"
-                      class="transition-colors" style="border-bottom: 1px solid #f0eadc;"
-                      @mouseenter="$event.currentTarget.style.background = '#faf8f0'"
-                      @mouseleave="$event.currentTarget.style.background = 'transparent'"
-                    >
+                    <tr v-for="(word, i) in result.words" :key="'t'+i" class="transition-colors" style="border-bottom: 1px solid #f0eadc;" @mouseenter="$event.currentTarget.style.background = '#faf8f0'" @mouseleave="$event.currentTarget.style.background = 'transparent'">
                       <td class="p-2" style="color: #a0896a;">{{ i + 1 }}</td>
                       <td class="p-2 font-arabic text-right text-sm" dir="rtl" style="color: #3a2a1a;">{{ word.word }}</td>
                       <td class="p-2 font-medium" style="color: #5a7a4a;">{{ word.lemma }}</td>
@@ -263,272 +137,142 @@
         </Transition>
       </div>
 
-      <!-- ════════════ TAB 2: SCAN PDF ════════════ -->
+      <!-- ════ TAB 2: SCAN PDF ════ -->
       <div v-if="activeTab === 'scan'" class="space-y-4">
-        <!-- Tesseract status -->
-        <div
-          class="px-3 py-2 rounded-lg text-xs flex items-center gap-2"
-          :style="tesseractOk
-            ? { background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534' }
-            : { background: '#fefce8', border: '1px solid #fef08a', color: '#854d0e' }"
-        >
-          <span>{{ tesseractOk ? '✓' : '⚠' }}</span>
-          <span>
-            <strong>Tesseract OCR:</strong>
-            {{ tesseractOk ? tesseractVersion : 'Belum terinstal — unduh dari ub-mannheim.github.io/tesseract' }}
-          </span>
-        </div>
+        <div class="px-3 py-2 rounded-lg text-xs flex items-center gap-2"
+          :style="tesseractOk ? { background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534' } : { background: '#fefce8', border: '1px solid #fef08a', color: '#854d0e' }"
+        ><span>{{ tesseractOk ? '✓' : '⚠' }}</span><span><strong>Tesseract OCR:</strong> {{ tesseractOk ? tesseractVersion : 'Belum terinstal' }}</span></div>
 
-        <!-- Upload section -->
         <div class="rounded-lg" style="background: #fffdf5; border: 1px solid #e8dcc8; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <div class="p-4">
-            <h2 class="text-sm font-bold mb-3" style="color: #3a2a1a;">
-              <span class="mr-1">📁</span> Upload PDF
-            </h2>
-
-            <!-- File upload -->
-            <div
-              class="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors mb-3"
-              :style="dragOver
-                ? { borderColor: '#c9a84c', background: '#fdf8ec' }
-                : { borderColor: '#e0d5c0', background: '#faf8f0' }"
-              @dragover.prevent="dragOver = true"
-              @dragleave="dragOver = false"
-              @drop.prevent="handleDrop"
-              @click="$refs.fileInput.click()"
+            <h2 class="text-sm font-bold mb-3" style="color: #3a2a1a;"><span class="mr-1">📁</span> Upload PDF</h2>
+            <div class="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors mb-3"
+              :style="dragOver ? { borderColor: '#c9a84c', background: '#fdf8ec' } : { borderColor: '#e0d5c0', background: '#faf8f0' }"
+              @dragover.prevent="dragOver = true" @dragleave="dragOver = false" @drop.prevent="handleDrop" @click="$refs.fileInput.click()"
             >
-              <input
-                ref="fileInput"
-                type="file"
-                accept=".pdf"
-                class="hidden"
-                @change="handleFileSelect"
-              />
+              <input ref="fileInput" type="file" accept=".pdf" class="hidden" @change="handleFileSelect" />
               <div class="text-3xl mb-2" style="color: #c9a84c;">📄</div>
-              <p class="text-sm font-medium" style="color: #3a2a1a;">
-                {{ selectedFile ? selectedFile.name : 'Klik atau seret PDF ke sini' }}
-              </p>
-              <p v-if="!selectedFile" class="text-xs mt-1" style="color: #a0896a;">
-                Format PDF, maks 50MB
-              </p>
-              <p v-if="selectedFile && pdfInfo" class="text-xs mt-1" style="color: #5a7a4a;">
-                {{ pdfInfo.total_pages }} halaman
-              </p>
+              <p class="text-sm font-medium" style="color: #3a2a1a;">{{ selectedFile ? selectedFile.name : 'Klik atau seret PDF ke sini' }}</p>
+              <p v-if="!selectedFile" class="text-xs mt-1" style="color: #a0896a;">Format PDF, maks 50MB</p>
+              <p v-if="selectedFile && pdfInfo" class="text-xs mt-1" style="color: #5a7a4a;">{{ pdfInfo.total_pages }} halaman</p>
             </div>
-
-            <!-- Page range + process -->
             <div class="flex items-end gap-3">
-              <div>
-                <label class="text-[10px] block mb-1 tracking-wider" style="color: #8b7355;">Halaman dari</label>
-                <input
-                  v-model.number="pageStart"
-                  type="number"
-                  min="1"
-                  class="w-16 p-2 border rounded text-sm text-center"
-                  style="border-color: #e0d5c0; background: #faf8f0; color: #3a2a1a;"
-                >
-              </div>
-              <div>
-                <label class="text-[10px] block mb-1 tracking-wider" style="color: #8b7355;">sampai</label>
-                <input
-                  v-model.number="pageEnd"
-                  type="number"
-                  min="1"
-                  class="w-16 p-2 border rounded text-sm text-center"
-                  style="border-color: #e0d5c0; background: #faf8f0; color: #3a2a1a;"
-                >
-              </div>
-              <button
-                @click="uploadAndProcess"
-                :disabled="ocrProcessing || !selectedFile || !tesseractOk"
+              <div><label class="text-[10px] block mb-1 tracking-wider" style="color: #8b7355;">Halaman dari</label>
+                <input v-model.number="pageStart" type="number" min="1" class="w-16 p-2 border rounded text-sm text-center" style="border-color: #e0d5c0; background: #faf8f0; color: #3a2a1a;"></div>
+              <div><label class="text-[10px] block mb-1 tracking-wider" style="color: #8b7355;">sampai</label>
+                <input v-model.number="pageEnd" type="number" min="1" class="w-16 p-2 border rounded text-sm text-center" style="border-color: #e0d5c0; background: #faf8f0; color: #3a2a1a;"></div>
+              <button @click="uploadAndProcess" :disabled="ocrProcessing || !selectedFile || !tesseractOk"
                 class="flex-1 py-2.5 rounded-lg text-sm font-medium tracking-wider transition-all duration-200 disabled:cursor-not-allowed"
                 style="background: linear-gradient(135deg, #2d5a3d, #1a3a2a); color: #f5f0e8;"
-                :style="ocrProcessing || !selectedFile || !tesseractOk ? { opacity: 0.5 } : {}"
-                @mouseenter="($event) => { if (!ocrProcessing && selectedFile && tesseractOk) $event.target.style.background = 'linear-gradient(135deg, #3a7a4d, #2d5a3d)' }"
-                @mouseleave="($event) => { $event.target.style.background = 'linear-gradient(135deg, #2d5a3d, #1a3a2a)' }"
-              >
-                <span v-if="ocrProcessing" class="flex items-center justify-center gap-1.5">
-                  <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>
-                  {{ uploadStatus }}
-                </span>
-                <span v-else>{{ '☾' }} Proses OCR</span>
-              </button>
+                :style="ocrProcessing || !selectedFile || !tesseractOk ? { opacity: 0.5 } : {}">
+                <span v-if="ocrProcessing" class="flex items-center justify-center gap-1.5"><svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> {{ uploadStatus }}</span><span v-else>{{ '☾' }} Proses OCR</span></button>
             </div>
-
-            <!-- Progress bar -->
             <div v-if="ocrProcessing" class="mt-3">
-              <div class="flex justify-between text-xs mb-1" style="color: #8b7355;">
-                <span>Halaman {{ ocrCurrentPage }} / {{ ocrTotalPages }}</span>
-                <span>{{ Math.round(ocrProgress * 100) }}%</span>
-              </div>
-              <div class="h-2 rounded-full overflow-hidden" style="background: #e0d5c0;">
-                <div
-                  class="h-full rounded-full transition-all duration-300"
-                  style="background: linear-gradient(90deg, #c9a84c, #2d5a3d);"
-                  :style="{ width: (ocrProgress * 100) + '%' }"
-                ></div>
-              </div>
+              <div class="flex justify-between text-xs mb-1" style="color: #8b7355;"><span>Halaman {{ ocrCurrentPage }} / {{ ocrTotalPages }}</span><span>{{ Math.round(ocrProgress * 100) }}%</span></div>
+              <div class="h-2 rounded-full overflow-hidden" style="background: #e0d5c0;"><div class="h-full rounded-full transition-all duration-300" style="background: linear-gradient(90deg, #c9a84c, #2d5a3d);" :style="{ width: (ocrProgress * 100) + '%' }"></div></div>
             </div>
           </div>
         </div>
 
-        <!-- OCR Error -->
-        <Transition
-          enter-active-class="transition duration-300 ease-out"
-          enter-from-class="opacity-0 -translate-y-2"
-          leave-active-class="transition duration-200 ease-in"
-          leave-to-class="opacity-0 -translate-y-2"
-        >
-          <div
-            v-if="ocrError"
-            class="px-3 py-2 rounded-lg text-sm"
-            style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;"
-          >{{ ocrError }}</div>
+        <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 -translate-y-2" leave-active-class="transition duration-200 ease-in" leave-to-class="opacity-0 -translate-y-2">
+          <div v-if="ocrError" class="px-3 py-2 rounded-lg text-sm" style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;">{{ ocrError }}</div>
         </Transition>
 
-        <!-- Uploaded PDFs list -->
         <div v-if="pdfList.length > 0" class="space-y-3">
-          <div
-            v-for="pdf in pdfList"
-            :key="pdf.id"
-            class="rounded-lg overflow-hidden"
-            style="background: #fffdf5; border: 1px solid #d4c5a9;"
-          >
-            <!-- PDF header -->
+          <div v-for="pdf in pdfList" :key="pdf.id" class="rounded-lg overflow-hidden" style="background: #fffdf5; border: 1px solid #d4c5a9;">
             <div class="px-4 py-3 flex items-center justify-between" style="background: #faf8f0; border-bottom: 1px solid #e8dcc8;">
               <div class="flex items-center gap-2">
                 <span class="text-lg">📄</span>
-                <div>
-                  <h3 class="text-sm font-semibold" style="color: #3a2a1a;">{{ pdf.filename }}</h3>
-                  <p class="text-[10px]" style="color: #a0896a;">
-                    {{ pdf.total_pages }} halaman • {{ pdf.pages_processed }} diproses • {{ pdf.pages_translated }} diterjemahkan
-                  </p>
-                </div>
+                <div><h3 class="text-sm font-semibold" style="color: #3a2a1a;">{{ pdf.filename }}</h3>
+                  <p class="text-[10px]" style="color: #a0896a;">{{ pdf.total_pages }} halaman • {{ pdf.pages_processed }} diproses • {{ pdf.pages_translated }} diterjemahkan</p></div>
               </div>
               <div class="flex gap-1.5">
-                <button
-                  v-if="pdf.pages_processed > 0 && pdf.pages_translated < pdf.pages_processed"
-                  @click="translatePdf(pdf.id)"
-                  :disabled="translatingPdfId === pdf.id"
-                  class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200 disabled:opacity-50"
-                  style="background: #c9a84c; color: white;"
-                >
-                  {{ translatingPdfId === pdf.id ? 'Menerjemah...' : 'Terjemah' }}
-                </button>
-                <button
-                  @click="deletePdf(pdf.id)"
-                  class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200"
+                <button v-if="pdf.pages_processed > 0 && pdf.pages_translated < pdf.pages_processed" @click="translatePdf(pdf.id)" :disabled="translatingPdfId === pdf.id"
+                  class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200 disabled:opacity-50" style="background: #c9a84c; color: white;">
+                  {{ translatingPdfId === pdf.id ? 'Menerjemah...' : 'Terjemah' }}</button>
+                <button @click="deletePdf(pdf.id)" class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200"
                   style="background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;"
-                  @mouseenter="$event.target.style.background = '#fee2e2'"
-                  @mouseleave="$event.target.style.background = '#fef2f2'"
-                >Hapus</button>
+                  @mouseenter="$event.target.style.background = '#fee2e2'" @mouseleave="$event.target.style.background = '#fef2f2'">Hapus</button>
               </div>
             </div>
-
-            <!-- Pages for this PDF -->
             <div class="px-4 pb-3">
-              <div
-                v-for="page in getPages(pdf.id)"
-                :key="page.id"
-                class="mt-2 p-3 rounded-lg"
-                style="background: #faf8f0; border: 1px solid #e0d5c0;"
-              >
+              <div v-for="page in getPages(pdf.id)" :key="page.id" class="mt-2 p-3 rounded-lg" style="background: #faf8f0; border: 1px solid #e0d5c0;">
                 <!-- Page header -->
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs font-medium" style="color: #8b7355;">
-                    Halaman {{ page.page_number }}
-                  </span>
-                  <span
-                    class="text-[10px] px-1.5 py-0.5 rounded"
-                    :style="page.confidence >= 0.8
-                      ? { background: '#dcfce7', color: '#166534' }
-                      : page.confidence >= 0.5
-                        ? { background: '#fef9c3', color: '#854d0e' }
-                        : { background: '#fee2e2', color: '#991b1b' }"
-                  >
-                    {{ Math.round(page.confidence * 100) }}%
+                  <span class="text-xs font-medium" style="color: #8b7355;">Halaman {{ page.page_number }}</span>
+                  <span class="flex items-center gap-1.5">
+                    <span v-if="pageEdits[page.id] !== undefined && !editingPages[page.id]" class="text-[9px]" style="color: #c9a84c;">✎ diedit</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded" :style="page.confidence >= 0.8 ? { background: '#dcfce7', color: '#166534' } : page.confidence >= 0.5 ? { background: '#fef9c3', color: '#854d0e' } : { background: '#fee2e2', color: '#991b1b' }">
+                      {{ Math.round(page.confidence * 100) }}%</span>
                   </span>
                 </div>
 
-                <!-- Editable Arabic text (edit OCR result before translate) -->
-                <div class="mb-2">
-                  <div class="flex items-center justify-between mb-1">
-                    <p class="text-[10px] tracking-wider" style="color: #8b7355;">TEKS ARAB</p>
-                    <span class="text-[9px]" style="color: #a0896a;">
-                      <span v-if="pageEdits[page.id] !== undefined" style="color: #c9a84c;">✎ diedit • </span>
-                      {{ getEditLength(page) }} karakter
-                    </span>
+                <!-- VIEW MODE: static text + Edit button -->
+                <div v-if="!editingPages[page.id]">
+                  <div class="mb-2" dir="rtl">
+                    <p class="text-[10px] tracking-wider mb-1" style="color: #8b7355;">TEKS ARAB</p>
+                    <p class="text-lg font-arabic leading-relaxed" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ getPageText(page) }}</p>
                   </div>
-                  <textarea
-                    :value="getPageText(page)"
-                    @input="updatePageEdit(page.id, ($event.target as HTMLTextAreaElement).value)"
-                    dir="rtl"
-                    class="w-full p-2.5 rounded-lg text-base font-arabic leading-relaxed resize-y transition-colors"
-                    style="background: #fffdf5; border: 1px solid #e0d5c0; color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif; min-height: 80px;"
-                    @focus="$event.target.style.borderColor = '#c9a84c'"
-                    @blur="$event.target.style.borderColor = '#e0d5c0'"
-                  ></textarea>
+                  <div class="flex justify-end gap-1.5">
+                    <button @click="toggleEdit(page.id, true)" class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200 flex items-center gap-1"
+                      style="background: #e0d5c0; color: #3a2a1a;"
+                      @mouseenter="$event.target.style.background = '#d4c5a9'" @mouseleave="$event.target.style.background = '#e0d5c0'">✎ Edit</button>
+                    <button @click="translatePage(page.id, page.page_number, getEditedText(page))" :disabled="translatingPageId === page.id"
+                      class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200 disabled:opacity-50 flex items-center gap-1"
+                      style="background: #c9a84c; color: white;"
+                      @mouseenter="translatingPageId !== page.id && ($event.target.style.background = '#b89430')" @mouseleave="translatingPageId !== page.id && ($event.target.style.background = '#c9a84c')"
+                    ><span v-if="translatingPageId === page.id"><svg class="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg></span>
+                      <span v-else>{{ '☾' }} Terjemah</span></button>
+                  </div>
                 </div>
 
-                <!-- Translate button for this page -->
-                <div class="flex justify-end mb-2">
-                  <button
-                    @click="translatePage(page.id, page.page_number, getEditedText(page))"
-                    :disabled="translatingPageId === page.id"
-                    class="text-[10px] px-3 py-1.5 rounded font-medium transition-all duration-200 disabled:opacity-50 flex items-center gap-1"
-                    style="background: #c9a84c; color: white;"
-                    @mouseenter="translatingPageId !== page.id && ($event.target.style.background = '#b89430')"
-                    @mouseleave="translatingPageId !== page.id && ($event.target.style.background = '#c9a84c')"
-                  >
-                    <span v-if="translatingPageId === page.id" class="flex items-center gap-1">
-                      <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                      </svg>
-                      Menerjemah...
-                    </span>
-                    <span v-else>{{ '☾' }} Terjemah Halaman</span>
-                  </button>
+                <!-- EDIT MODE: textarea + Save / Tashkeel / Terjemah -->
+                <div v-else>
+                  <div class="mb-2">
+                    <div class="flex items-center justify-between mb-1">
+                      <p class="text-[10px] tracking-wider" style="color: #8b7355;">EDIT TEKS ARAB</p>
+                      <span class="text-[9px]" style="color: #a0896a;">{{ getEditLength(page) }} karakter</span>
+                    </div>
+                    <textarea
+                      :value="getPageText(page)" @input="updatePageEdit(page.id, ($event.target as HTMLTextAreaElement).value)"
+                      dir="rtl" class="w-full p-2.5 rounded-lg text-base font-arabic leading-relaxed resize-y transition-colors"
+                      style="background: #fffdf5; border: 1px solid #c9a84c; color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif; min-height: 80px;"></textarea>
+                  </div>
+                  <div class="flex justify-end gap-1.5 flex-wrap">
+                    <button @click="savePageText(page)" :disabled="savingPageIds[page.id]"
+                      class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200 disabled:opacity-50 flex items-center gap-1"
+                      style="background: #2d5a3d; color: white;"
+                      @mouseenter="!savingPageIds[page.id] && ($event.target.style.background = '#3a7a4d')" @mouseleave="!savingPageIds[page.id] && ($event.target.style.background = '#2d5a3d')"
+                    >{{ savingPageIds[page.id] ? 'Menyimpan...' : '💾 Save' }}</button>
+                    <button @click="tashkeelPageText(page)" :disabled="tashkeelingPageIds[page.id]"
+                      class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200 disabled:opacity-50 flex items-center gap-1"
+                      style="background: #6b21a8; color: white;"
+                      @mouseenter="!tashkeelingPageIds[page.id] && ($event.target.style.background = '#7c3aed')" @mouseleave="!tashkeelingPageIds[page.id] && ($event.target.style.background = '#6b21a8')"
+                    >{{ tashkeelingPageIds[page.id] ? 'Tashkeel...' : '◌ Tashkeel' }}</button>
+                    <button @click="translatePage(page.id, page.page_number, getEditedText(page))" :disabled="translatingPageId === page.id"
+                      class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200 disabled:opacity-50 flex items-center gap-1"
+                      style="background: #c9a84c; color: white;"
+                      @mouseenter="translatingPageId !== page.id && ($event.target.style.background = '#b89430')" @mouseleave="translatingPageId !== page.id && ($event.target.style.background = '#c9a84c')"
+                    ><span v-if="translatingPageId === page.id"><svg class="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg></span>
+                      <span v-else>{{ '☾' }} Terjemah</span></button>
+                  </div>
                 </div>
 
-                <!-- Indonesian translation (only show after translate) -->
-                <div v-if="page.translated_id" class="pt-2" style="border-top: 1px dashed #e0d5c0;">
+                <!-- Translation results -->
+                <div v-if="page.translated_id" class="pt-2 mt-2" style="border-top: 1px dashed #e0d5c0;">
                   <p class="text-[10px] tracking-wider mb-1" style="color: #3a7a4d;">BAHASA INDONESIA</p>
-                  <p class="text-sm leading-relaxed" style="color: #2a4a3a;">
-                    {{ page.translated_id }}
-                  </p>
+                  <p class="text-sm leading-relaxed" style="color: #2a4a3a;">{{ page.translated_id }}</p>
                 </div>
-
-                <!-- English translation -->
                 <div v-if="page.translated_en" class="pt-1">
                   <p class="text-[10px] tracking-wider mb-1" style="color: #4a6a8a;">ENGLISH</p>
-                  <p class="text-xs leading-relaxed" style="color: #2a3a4a;">
-                    {{ page.translated_en }}
-                  </p>
+                  <p class="text-xs leading-relaxed" style="color: #2a3a4a;">{{ page.translated_en }}</p>
                 </div>
               </div>
-
-              <!-- Empty state -->
-              <div
-                v-if="getPages(pdf.id).length === 0"
-                class="mt-2 p-4 text-center text-xs italic"
-                style="color: #a0896a;"
-              >
-                Belum ada halaman yang diproses. Pilih rentang halaman dan klik "Proses OCR".
-              </div>
+              <div v-if="getPages(pdf.id).length === 0" class="mt-2 p-4 text-center text-xs italic" style="color: #a0896a;">Belum ada halaman yang diproses.</div>
             </div>
           </div>
         </div>
-
-        <!-- Empty state -->
-        <div
-          v-if="pdfList.length === 0"
-          class="rounded-lg p-8 text-center"
-          style="background: #faf8f0; border: 1px dashed #e0d5c0;"
-        >
+        <div v-if="pdfList.length === 0" class="rounded-lg p-8 text-center" style="background: #faf8f0; border: 1px dashed #e0d5c0;">
           <div class="text-4xl mb-3" style="color: #d4c5a9;">📄</div>
           <p class="text-sm font-medium" style="color: #8b7355;">Belum ada PDF</p>
           <p class="text-xs mt-1" style="color: #a0896a;">Upload PDF kitab untuk memulai OCR dan terjemahan</p>
@@ -539,9 +283,7 @@
     <footer class="text-center py-4">
       <div class="max-w-4xl mx-auto px-4">
         <div class="flex items-center justify-center gap-2 text-[10px] tracking-wider" style="color: #a0896a;">
-          <span style="border-top: 1px solid #d4c5a9; flex: 1; max-width: 40px;"></span>
-          <span>Penerjemah Kitab</span>
-          <span style="border-top: 1px solid #d4c5a9; flex: 1; max-width: 40px;"></span>
+          <span style="border-top: 1px solid #d4c5a9; flex: 1; max-width: 40px;"></span><span>Penerjemah Kitab</span><span style="border-top: 1px solid #d4c5a9; flex: 1; max-width: 40px;"></span>
         </div>
       </div>
     </footer>
@@ -593,7 +335,12 @@ const ocrError = ref<string | null>(null)
 const uploadStatus = ref('Mengupload...')
 const pdfList = ref<OCRPDFInfo[]>([])
 const pagesCache = ref<Record<number, OCRPage[]>>({})
-const pageEdits = ref<Record<number, string>>({})  // page_id → edited text
+
+// Per-page action states
+const pageEdits = ref<Record<number, string>>({})
+const editingPages = ref<Record<number, boolean>>({})
+const savingPageIds = ref<Record<number, boolean>>({})
+const tashkeelingPageIds = ref<Record<number, boolean>>({})
 const translatingPdfId = ref<number | null>(null)
 const translatingPageId = ref<number | null>(null)
 
@@ -614,16 +361,14 @@ async function analyze() {
   loading.value = true; error.value = null; result.value = null
   try {
     const res = await fetch(`${config.public.apiBase}/api/analyze`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: inputText.value }),
     })
     if (!res.ok) throw new Error(`Error: ${res.status}`)
     result.value = await res.json()
     translateText(inputText.value)
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Gagal menghubungi server'
-  } finally { loading.value = false }
+  } catch (e) { error.value = e instanceof Error ? e.message : 'Gagal menghubungi server' }
+  finally { loading.value = false }
 }
 
 async function translateText(text: string) {
@@ -631,15 +376,14 @@ async function translateText(text: string) {
   translating.value = true; translation.value = null
   try {
     const res = await fetch(`${config.public.apiBase}/api/translate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
     })
-    if (!res.ok) { const err = await res.json().catch(() => ({ detail: `Error: ${res.status}` })); console.warn('Translation error:', err.detail); return }
+    if (!res.ok) return
     const data = await res.json()
     if (requestId !== _translateId) return
     translation.value = { translation_id: data.translation_id, translation_en: data.translation_en }
-  } catch (e) { console.warn('Translation unavailable:', e) }
+  } catch { /* ignore */ }
   finally { translating.value = false }
 }
 
@@ -673,15 +417,18 @@ async function loadPages(pdfId: number) {
 
 function getPages(pdfId: number): OCRPage[] { return pagesCache.value[pdfId] || [] }
 
+/* ── View/Edit mode ── */
+function toggleEdit(pageId: number, editing: boolean) {
+  editingPages.value[pageId] = editing
+}
+
 /* ── Editable text functions ── */
 function getPageText(page: OCRPage): string {
-  // Return edited text if available, otherwise original OCR text
   if (pageEdits.value[page.id] !== undefined) return pageEdits.value[page.id]
   return page.cleaned_text || page.raw_text || ''
 }
 
 function getEditedText(page: OCRPage): string {
-  // Return the text to translate: edited text, or fallback to original
   const edited = pageEdits.value[page.id]
   if (edited !== undefined && edited.trim()) return edited.trim()
   return (page.cleaned_text || page.raw_text || '').trim()
@@ -697,156 +444,144 @@ function getEditLength(page: OCRPage): number {
   return (page.cleaned_text || page.raw_text || '').length
 }
 
-async function translatePage(pageId: number, pageNumber: number, text: string) {
+/* ── Save edited text ── */
+async function savePageText(page: OCRPage) {
+  const text = getEditedText(page)
   if (!text) return
-  translatingPageId.value = pageId
+  savingPageIds.value[page.id] = true
   try {
-    const res = await fetch(`${config.public.apiBase}/api/ocr/translate-page`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page_id: pageId, text }),
+    const res = await fetch(`${config.public.apiBase}/api/ocr/save-page`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page_id: page.id, text }),
     })
     if (res.ok) {
-      // Refresh pages to show translations
-      // Find which PDF this page belongs to
-      for (const [pdfId, pages] of Object.entries(pagesCache.value)) {
-        if (pages.some(p => p.id === pageId)) {
-          await loadPages(Number(pdfId))
+      // Exit edit mode and refresh to show saved text
+      toggleEdit(page.id, false)
+      // Find the PDF this page belongs to and refresh
+      for (const [pid, pages] of Object.entries(pagesCache.value)) {
+        if (pages.some(p => p.id === page.id)) {
+          await loadPages(Number(pid))
           break
         }
       }
     }
-  } catch (e) {
-    console.warn('Page translation error:', e)
-  } finally {
-    translatingPageId.value = null
-  }
+  } catch { /* ignore */ }
+  finally { savingPageIds.value[page.id] = false }
 }
 
-
-
-function handleFileSelect(event: Event) {
-  const input = event.target as HTMLInputElement
-  if (input.files && input.files[0]) setFile(input.files[0])
-}
-
-function handleDrop(event: DragEvent) {
-  dragOver.value = false
-  if (event.dataTransfer?.files[0]) setFile(event.dataTransfer.files[0])
-}
-
-function setFile(file: File) {
-  selectedFile.value = file
-  pdfInfo.value = null
-  // Try to get page count from server after file is selected
-  // (We'll upload first, then the upload endpoint returns total_pages)
-  // For now just show the filename
-}
-
-async function uploadAndProcess() {
-  if (!selectedFile.value || !tesseractOk.value) return
-  ocrProcessing.value = true; ocrError.value = null; ocrProgress.value = 0
-
+/* ── Tashkeel (diacritization) ── */
+async function tashkeelPageText(page: OCRPage) {
+  const text = getEditedText(page)
+  if (!text) return
+  tashkeelingPageIds.value[page.id] = true
   try {
-    // Step 1: Upload
-    uploadStatus.value = 'Mengupload...'
-    const formData = new FormData()
-    formData.append('file', selectedFile.value)
-
-    const uploadRes = await fetch(`${config.public.apiBase}/api/ocr/upload`, {
-      method: 'POST',
-      body: formData,
+    const res = await fetch(`${config.public.apiBase}/api/ocr/tashkeel-page`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
     })
-    if (!uploadRes.ok) throw new Error('Gagal upload PDF')
-    const uploadData = await uploadRes.json()
-    const pdfId = uploadData.pdf_id
-    const maxPages = uploadData.total_pages
+    if (res.ok) {
+      const data = await res.json()
+      // Update the edit buffer with the diacritized text
+      updatePageEdit(page.id, data.harakat)
+    }
+  } catch { /* ignore */ }
+  finally { tashkeelingPageIds.value[page.id] = false }
+}
 
-    // Auto-set page range to full PDF
-    pageStart.value = 1
-    pageEnd.value = maxPages
-
-    // Validate page range
-    const start = Math.max(1, pageStart.value)
-    const end = Math.min(maxPages, pageEnd.value)
-    if (start > end) { ocrError.value = 'Halaman awal harus ≤ halaman akhir'; ocrProcessing.value = false; return }
-
-    ocrTotalPages.value = end - start + 1
-
-    // Step 2: Process OCR one page at a time for real-time progress
-    uploadStatus.value = 'OCR...'
-    for (let pg = start; pg <= end; pg++) {
-      ocrCurrentPage.value = pg - start + 1
-      ocrProgress.value = (pg - start + 1) / ocrTotalPages.value
-      uploadStatus.value = `OCR halaman ${pg}/${end}...`
-
-      const processRes = await fetch(`${config.public.apiBase}/api/ocr/process`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pdf_id: pdfId, page_start: pg, page_end: pg }),
-      })
-      if (!processRes.ok) {
-        const errData = await processRes.json().catch(() => ({}))
-        throw new Error(errData.detail || 'Gagal proses OCR')
+/* ── Translate page ── */
+async function translatePage(pageId: number, _pageNumber: number, text: string) {
+  if (!text) return
+  translatingPageId.value = pageId
+  try {
+    const res = await fetch(`${config.public.apiBase}/api/ocr/translate-page`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page_id: pageId, text }),
+    })
+    if (res.ok) {
+      for (const [pid, pages] of Object.entries(pagesCache.value)) {
+        if (pages.some(p => p.id === pageId)) {
+          await loadPages(Number(pid))
+          toggleEdit(pageId, false)
+          break
+        }
       }
     }
-
-    // All done
-    ocrProgress.value = 1
-
-    // Refresh lists
-    await loadPdfList()
-    await loadPages(pdfId)
-    selectedFile.value = null
-    pdfInfo.value = null
-  } catch (e) {
-    ocrError.value = e instanceof Error ? e.message : 'Gagal memproses OCR'
-  } finally {
-    ocrProcessing.value = false
-  }
+  } catch { /* ignore */ }
+  finally { translatingPageId.value = null }
 }
 
+/* ── Bulk translate all pages ── */
 async function translatePdf(pdfId: number) {
   translatingPdfId.value = pdfId
   try {
     const res = await fetch(`${config.public.apiBase}/api/ocr/translate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pdf_id: pdfId }),
     })
-    if (res.ok) {
-      await loadPdfList()
-      await loadPages(pdfId)
-    }
+    if (res.ok) { await loadPdfList(); await loadPages(pdfId) }
   } catch { /* ignore */ }
   finally { translatingPdfId.value = null }
 }
 
+/* ── Delete PDF ── */
 async function deletePdf(pdfId: number) {
   try {
     const res = await fetch(`${config.public.apiBase}/api/ocr/delete/${pdfId}`, { method: 'POST' })
-    if (res.ok) {
-      delete pagesCache.value[pdfId]
-      await loadPdfList()
-    }
+    if (res.ok) { delete pagesCache.value[pdfId]; await loadPdfList() }
   } catch { /* ignore */ }
 }
 
+/* ── Upload & Process ── */
+function handleFileSelect(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (input.files && input.files[0]) setFile(input.files[0])
+}
+function handleDrop(event: DragEvent) {
+  dragOver.value = false
+  if (event.dataTransfer?.files[0]) setFile(event.dataTransfer.files[0])
+}
+function setFile(file: File) { selectedFile.value = file; pdfInfo.value = null }
+
+async function uploadAndProcess() {
+  if (!selectedFile.value || !tesseractOk.value) return
+  ocrProcessing.value = true; ocrError.value = null; ocrProgress.value = 0
+  try {
+    uploadStatus.value = 'Mengupload...'
+    const formData = new FormData()
+    formData.append('file', selectedFile.value)
+    const uploadRes = await fetch(`${config.public.apiBase}/api/ocr/upload`, { method: 'POST', body: formData })
+    if (!uploadRes.ok) throw new Error('Gagal upload PDF')
+    const uploadData = await uploadRes.json()
+    const pdfId = uploadData.pdf_id
+    const maxPages = uploadData.total_pages
+    pageStart.value = 1; pageEnd.value = maxPages
+    const start = Math.max(1, pageStart.value); const end = Math.min(maxPages, pageEnd.value)
+    if (start > end) { ocrError.value = 'Halaman awal harus ≤ halaman akhir'; ocrProcessing.value = false; return }
+    ocrTotalPages.value = end - start + 1
+    uploadStatus.value = 'OCR...'
+    for (let pg = start; pg <= end; pg++) {
+      ocrCurrentPage.value = pg - start + 1; ocrProgress.value = (pg - start + 1) / ocrTotalPages.value
+      uploadStatus.value = `OCR halaman ${pg}/${end}...`
+      const processRes = await fetch(`${config.public.apiBase}/api/ocr/process`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdf_id: pdfId, page_start: pg, page_end: pg }),
+      })
+      if (!processRes.ok) { const errData = await processRes.json().catch(() => ({})); throw new Error(errData.detail || 'Gagal proses OCR') }
+    }
+    ocrProgress.value = 1
+    await loadPdfList(); await loadPages(pdfId)
+    selectedFile.value = null; pdfInfo.value = null
+  } catch (e) { ocrError.value = e instanceof Error ? e.message : 'Gagal memproses OCR' }
+  finally { ocrProcessing.value = false }
+}
+
 /* ── Init ── */
-onMounted(() => {
-  checkTesseract()
-  loadPdfList()
-})
+onMounted(() => { checkTesseract(); loadPdfList() })
 </script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
-
-.font-arabic {
-  font-family: 'Amiri', 'Traditional Arabic', serif !important;
-}
-
-/* POS badge colors */
+.font-arabic { font-family: 'Amiri', 'Traditional Arabic', serif !important; }
 .noun-badge { background: #dcfce7; color: #166534; }
 .verb-badge { background: #ffedd5; color: #9a3412; }
 .prep-badge { background: #f3e8ff; color: #6b21a8; }
@@ -861,18 +596,10 @@ onMounted(() => {
 .num-badge { background: #ecfccb; color: #3f6212; }
 .rel-badge { background: #f3e8ff; color: #6b21a8; }
 .default-badge { background: #f3f4f6; color: #4b5563; }
-
-/* Word card animations */
-.word-card { transition: all 0.3s ease; }
+.word-card { transition: all 0.3s ease; animation: kitabReveal 0.5s ease-out both; }
 .word-card:hover { transform: translateY(-2px); z-index: 10; }
 .word-card:hover > div { box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px; }
-.word-card { animation: kitabReveal 0.5s ease-out both; }
-
-@keyframes kitabReveal {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
+@keyframes kitabReveal { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .word-card:nth-child(1) { animation-delay: 0.00s; }
 .word-card:nth-child(2) { animation-delay: 0.05s; }
 .word-card:nth-child(3) { animation-delay: 0.10s; }
@@ -888,8 +615,6 @@ onMounted(() => {
 .word-card:nth-child(13) { animation-delay: 0.60s; }
 .word-card:nth-child(14) { animation-delay: 0.65s; }
 .word-card:nth-child(15) { animation-delay: 0.70s; }
-
-/* Hover states */
 .noun-badge:hover { background: #bbf7d0; }
 .verb-badge:hover { background: #fed7aa; }
 .prep-badge:hover { background: #e9d5ff; }
