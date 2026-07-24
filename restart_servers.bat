@@ -13,13 +13,13 @@ echo   Done.
 echo.
 
 echo [2/4] Starting Backend (CAMeL Tools + post-processing)...
-start "PenerjemahKitab-Backend" cmd /k "cd /d %~dp0backend && pyenv exec python3 -X utf8 -m uvicorn main:app --host 0.0.0.0 --port 8000"
+start "PenerjemahKitab-Backend" cmd /k "cd /d %~dp0backend && pyenv exec python3 -X utf8 -m uvicorn main:app --host 0.0.0.0 --port 8001"
 echo   Backend window opened (title: PenerjemahKitab-Backend)
 timeout /t 12 /nobreak >nul
 echo.
 
 echo [3/4] Starting Frontend...
-start "PenerjemahKitab-Frontend" cmd /k "cd /d %~dp0frontend && npx nuxt dev --port 3000 --host 0.0.0.0"
+start "PenerjemahKitab-Frontend" cmd /k "cd /d %~dp0frontend && set NUXT_PUBLIC_API_BASE=http://localhost:8001 && npx nuxt dev --port 3000 --host 0.0.0.0"
 echo   Frontend window opened (title: PenerjemahKitab-Frontend)
 timeout /t 15 /nobreak >nul
 echo.
@@ -27,9 +27,9 @@ echo.
 echo [4/4] Verifying servers...
 
 REM Test backend
-curl -s --fail http://localhost:8000/api/health >nul 2>&1
+curl -s --fail http://localhost:8001/api/health >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   [OK] Backend: http://localhost:8000
+    echo   [OK] Backend: http://localhost:8001
 ) else (
     echo   [FAIL] Backend not responding - check the backend window for errors
 )
