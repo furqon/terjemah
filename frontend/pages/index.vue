@@ -153,7 +153,7 @@
           </div>
           <div v-if="translation" class="bg-white rounded-lg shadow-sm border border-amber-100 p-4">
             <h2 class="text-base font-bold text-gray-700 mb-2">Terjemahan Lengkap</h2>
-            <div class="grid md:grid-cols-2 gap-3">
+            <div class="grid md:grid-cols-3 gap-3">
               <div>
                 <p class="text-xs text-gray-400 mb-1">Teks Arab (dengan Harakat):</p>
                 <div class="bg-gray-50 rounded border border-gray-100 p-3 text-right" dir="rtl">
@@ -162,8 +162,14 @@
               </div>
               <div>
                 <p class="text-xs text-gray-400 mb-1">Bahasa Indonesia:</p>
+                <div class="bg-emerald-50 border border-emerald-200 rounded p-3">
+                  <p class="text-sm text-emerald-800">{{ translation.translation_id }}</p>
+                </div>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400 mb-1">English:</p>
                 <div class="bg-blue-50 border border-blue-200 rounded p-3">
-                  <p class="text-sm text-blue-800">{{ translation }}</p>
+                  <p class="text-sm text-blue-800">{{ translation.translation_en }}</p>
                 </div>
               </div>
             </div>
@@ -246,7 +252,7 @@ const result = ref<AnalyzeResponse | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 const translating = ref(false)
-const translation = ref<string | null>(null)
+const translation = ref<{ translation_id: string; translation_en: string } | null>(null)
 
 const config = useRuntimeConfig()
 
@@ -319,7 +325,7 @@ async function translateText(text: string) {
     const data = await res.json()
     // Discard stale responses from previous requests
     if (requestId !== _translateId) return
-    translation.value = data.translation
+    translation.value = { translation_id: data.translation_id, translation_en: data.translation_en }
   } catch (e) {
     // Translation is optional — silently fail
     console.warn('Translation unavailable:', e)

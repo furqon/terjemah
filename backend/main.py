@@ -4,6 +4,7 @@
 # Thread-safe: uses threading.local() for per-thread model instances.
 
 import threading
+import time
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -285,17 +286,21 @@ _translator_lock = threading.Lock()
 _translator = None
 
 
-def _get_translator():
-    """Get or create the Google Translate translator (thread-safe)."""
-    global _translator
-    if _translator is not None:
-        return _translator
+_translator_en = None
+
+
+def _get_translators():
+    """Get or create both Google Translate translators (thread-safe)."""
+    global _translator, _translator_en
+    if _translator is not None and _translator_en is not None:
+        return _translator, _translator_en
     with _translator_lock:
-        if _translator is not None:
-            return _translator
+        if _translator is not None and _translator_en is not None:
+            return _translator, _translator_en
         from deep_translator import GoogleTranslator
         _translator = GoogleTranslator(source='ar', target='id')
-        return _translator
+        _translator_en = GoogleTranslator(source='ar', target='en')
+        return _translator, _translator_en
 
 
 class TranslateRequest(BaseModel):
@@ -304,7 +309,8 @@ class TranslateRequest(BaseModel):
 
 class TranslateResponse(BaseModel):
     source: str
-    translation: str
+    translation_id: str   # Indonesian translation
+    translation_en: str   # English translation
     engine: str = "google-translate"
 
 
@@ -336,11 +342,17 @@ def translate(request: TranslateRequest):
     Requires internet connection. Free with reasonable rate limits.
     """
     if not request.text.strip():
-        return TranslateResponse(source=request.text, translation="")
+        return TranslateResponse(source=request.text, translation_id="", translation_en="")
     try:
-        translator = _get_translator()
-        result = translator.translate(request.text)
-        return TranslateResponse(source=request.text, translation=result)
+        trans_id, trans_en = _get_translators()
+        result_id = trans_id.translate(request.text) or ''
+        # Small delay to avoid rate limiting on rapid sequential calls
+        time.sleep(0.3)
+        try:
+            result_en = trans_en.translate(request.text) or ''
+        except Exception:
+            result_en = ''
+        return TranslateResponse(source=request.text, translation_id=result_id, translation_en=result_en)
     except Exception as e:
         from fastapi import HTTPException
         raise HTTPException(status_code=500, detail=str(e))
