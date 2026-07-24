@@ -108,14 +108,20 @@ def get_disambiguator():
     return _thread_local.disambig
 
 
-def diacritize(text: str) -> str:
-    """Add harakat (diacritics) to Arabic text using CAMeL Tools."""
+def diacritize(text: str, analyses=None) -> str:
+    """Add harakat (diacritics) to Arabic text using CAMeL Tools.
+
+    Args:
+        text: The undiacritized Arabic text.
+        analyses: Optional pre-computed CAMeL analyses to avoid redundant calls.
+    """
     if not text.strip():
         return text
 
     words = text.strip().split()
-    disambig = get_disambiguator()
-    analyses = disambig.disambiguate(words)
+    if analyses is None:
+        disambig = get_disambiguator()
+        analyses = disambig.disambiguate(words)
 
     diacritized_words: list[str] = []
     for idx, word_analyses in enumerate(analyses):
@@ -135,6 +141,8 @@ def diacritize(text: str) -> str:
     return _postprocess_diacritized(text, result)
 
 
+# ── Pydantic models ────────────────────────────────────────────────
+
 class TashkeelRequest(BaseModel):
     text: str
 
@@ -143,6 +151,128 @@ class TashkeelResponse(BaseModel):
     original: str
     harakat: str
 
+
+class AnalyzeRequest(BaseModel):
+    text: str
+
+
+class WordAnalysis(BaseModel):
+    word: str          # Diacritized word form
+    lemma: str         # Lexical form (lemma)
+    root: str          # Root letters (e.g., كتب)
+    pos_type: str      # POS type in English (noun, verb, prep, etc.)
+    pos_arabic: str    # POS type in Arabic (إسم, فعل, حرف, etc.)
+    gloss: str         # English gloss / meaning
+
+
+class AnalyzeResponse(BaseModel):
+    original: str
+    harakat: str
+    words: list[WordAnalysis]
+    word_count: int
+
+
+# ── POS mapping: CAMeL Tools tags → Arabic labels ─────────────────
+
+POS_MAP: dict[str, str] = {
+    'noun': 'إسم',
+    'verb': 'فعل',
+    'adj': 'صفة',
+    'adv': 'ظرف',
+    'pron': 'ضمير',
+    'dem': 'إشارة',
+    'rel': 'موصول',
+    'prep': 'حرف جر',
+    'conj': 'حرف عطف',
+    'part': 'حرف',
+    'neg': 'حرف نفي',
+    'interr': 'حرف استفهام',
+    'det': 'أداة تعريف',
+    'num': 'عدد',
+    'noun_prop': 'علم',
+    'noun_quant': 'كمية',
+    'noun_num': 'عدد',
+    'abbrev': 'اختصار',
+}
+
+
+# ── Analysis helper ─────────────────────────────────────────────────
+
+def _map_pos(pos_tag: str) -> str:
+    """Map a CAMeL Tools POS tag to its Arabic label."""
+    if not pos_tag:
+        return '—'
+    pos_lower = pos_tag.lower().strip()
+    if pos_lower in POS_MAP:
+        return POS_MAP[pos_lower]
+    return pos_tag  # Return raw tag if no mapping
+
+
+def analyze_words(text: str) -> AnalyzeResponse:
+    """Get harakat + word-by-word analysis for Arabic text."""
+    if not text.strip():
+        return AnalyzeResponse(
+            original=text, harakat=text,
+            words=[], word_count=0
+        )
+
+    # Step 1: Get CAMeL Tools word-level analyses (once, reused for diacritize)
+    words = text.strip().split()
+    disambig = get_disambiguator()
+    analyses = disambig.disambiguate(words)
+
+    # Step 2: Get diacritized text using the SAME analyses (avoids redundant CAMeL call)
+    harakat_text = diacritize(text, analyses=analyses)
+
+    # Step 3: Build word list
+    word_list: list[WordAnalysis] = []
+    harakat_words = harakat_text.split()
+
+    for idx, word_analyses in enumerate(analyses):
+        if word_analyses.analyses:
+            best = word_analyses.analyses[0]
+            if isinstance(best.analysis, dict):
+                a = best.analysis
+                # Get the diacritized word form (from the harakat output to keep post-processing)
+                word_form = harakat_words[idx] if idx < len(harakat_words) else words[idx]
+                lemma = a.get('lex', words[idx])
+                root = a.get('root', '—')
+                pos_tag = a.get('pos', 'unknown')
+                gloss = a.get('gloss', '') or ''
+                pos_arabic = _map_pos(pos_tag)
+            else:
+                word_form = harakat_words[idx] if idx < len(harakat_words) else words[idx]
+                lemma = words[idx]
+                root = '—'
+                pos_tag = 'unknown'
+                pos_arabic = '—'
+                gloss = ''
+        else:
+            word_form = harakat_words[idx] if idx < len(harakat_words) else words[idx]
+            lemma = words[idx]
+            root = '—'
+            pos_tag = 'unknown'
+            pos_arabic = '—'
+            gloss = ''
+
+        word_list.append(WordAnalysis(
+            word=word_form,
+            lemma=lemma,
+            root=root,
+            pos_type=pos_tag,
+            pos_arabic=pos_arabic,
+            gloss=gloss,
+        ))
+
+    return AnalyzeResponse(
+        original=text,
+        harakat=harakat_text,
+        words=word_list,
+        word_count=len(word_list),
+    )
+
+
+# ── API endpoints ───────────────────────────────────────────────────
 
 @app.get("/api/health")
 def health():
@@ -154,3 +284,9 @@ def tashkeel(request: TashkeelRequest):
     """Add harakat (diacritics) to Arabic text using CAMeL Tools."""
     result = diacritize(request.text)
     return TashkeelResponse(original=request.text, harakat=result)
+
+
+@app.post("/api/analyze", response_model=AnalyzeResponse)
+def analyze(request: AnalyzeRequest):
+    """Get harakat + word-by-word analysis (lemma, root, POS, gloss)."""
+    return analyze_words(request.text)
