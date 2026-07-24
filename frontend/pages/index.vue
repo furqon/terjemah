@@ -133,12 +133,12 @@
                   {{ word.pos_arabic }}
                 </span>
 
-                <!-- Translations: ID + EN -->
-                <div class="mt-1 leading-tight">
-                  <p v-if="word.gloss_id" class="text-[10px] font-medium text-emerald-600">
+                <!-- Translations: ID + EN side by side -->
+                <div class="mt-1 leading-tight space-y-0.5">
+                  <p v-if="word.gloss_id" class="text-[10px] font-medium text-emerald-600" title="Indonesian">
                     {{ word.gloss_id }}
                   </p>
-                  <p v-if="word.gloss_en" class="text-[10px] text-gray-400 italic">
+                  <p v-if="word.gloss_en" class="text-[10px] text-blue-500" title="English">
                     {{ word.gloss_en }}
                   </p>
                 </div>

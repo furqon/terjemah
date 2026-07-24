@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from camel_tools.disambig.mle import MLEDisambiguator
 from dictionary import lookup as dict_lookup
+from dictionary_en import lookup as dict_lookup_en
 
 
 # ── Post-processing helpers ──────────────────────────────────────────
@@ -241,9 +242,9 @@ def analyze_words(text: str) -> AnalyzeResponse:
                 lemma = a.get('lex', words[idx])
                 root = a.get('root', '—')
                 pos_tag = a.get('pos', 'unknown')
-                # Use Indonesian dictionary + CAMeL English gloss
+                # Use Indonesian + English dictionaries for word translations
                 gloss_id = dict_lookup(lemma) or '?'
-                gloss_en = a.get('gloss', '') or ''
+                gloss_en = dict_lookup_en(lemma) or '?'
                 pos_arabic = _map_pos(pos_tag)
             else:
                 word_form = harakat_words[idx] if idx < len(harakat_words) else words[idx]
@@ -251,7 +252,8 @@ def analyze_words(text: str) -> AnalyzeResponse:
                 root = '—'
                 pos_tag = 'unknown'
                 pos_arabic = '—'
-                gloss = ''
+                gloss_id = ''
+                gloss_en = ''
         else:
             word_form = harakat_words[idx] if idx < len(harakat_words) else words[idx]
             lemma = words[idx]
