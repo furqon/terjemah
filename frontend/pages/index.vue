@@ -453,19 +453,52 @@
                   </span>
                 </div>
 
-                <!-- Arabic text -->
-                <div class="mb-2" dir="rtl">
-                  <p class="text-[10px] tracking-wider mb-1" style="color: #8b7355;">TEKS ARAB</p>
-                  <p class="text-lg font-arabic leading-relaxed" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">
-                    {{ (page.cleaned_text || page.raw_text || '').substring(0, 300) }}{{ (page.cleaned_text || page.raw_text || '').length > 300 ? '...' : '' }}
-                  </p>
+                <!-- Editable Arabic text (edit OCR result before translate) -->
+                <div class="mb-2">
+                  <div class="flex items-center justify-between mb-1">
+                    <p class="text-[10px] tracking-wider" style="color: #8b7355;">TEKS ARAB</p>
+                    <span class="text-[9px]" style="color: #a0896a;">
+                      <span v-if="pageEdits[page.id] !== undefined" style="color: #c9a84c;">✎ diedit • </span>
+                      {{ getEditLength(page) }} karakter
+                    </span>
+                  </div>
+                  <textarea
+                    :value="getPageText(page)"
+                    @input="updatePageEdit(page.id, ($event.target as HTMLTextAreaElement).value)"
+                    dir="rtl"
+                    class="w-full p-2.5 rounded-lg text-base font-arabic leading-relaxed resize-y transition-colors"
+                    style="background: #fffdf5; border: 1px solid #e0d5c0; color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif; min-height: 80px;"
+                    @focus="$event.target.style.borderColor = '#c9a84c'"
+                    @blur="$event.target.style.borderColor = '#e0d5c0'"
+                  ></textarea>
                 </div>
 
-                <!-- Indonesian translation -->
+                <!-- Translate button for this page -->
+                <div class="flex justify-end mb-2">
+                  <button
+                    @click="translatePage(page.id, page.page_number, getEditedText(page))"
+                    :disabled="translatingPageId === page.id"
+                    class="text-[10px] px-3 py-1.5 rounded font-medium transition-all duration-200 disabled:opacity-50 flex items-center gap-1"
+                    style="background: #c9a84c; color: white;"
+                    @mouseenter="translatingPageId !== page.id && ($event.target.style.background = '#b89430')"
+                    @mouseleave="translatingPageId !== page.id && ($event.target.style.background = '#c9a84c')"
+                  >
+                    <span v-if="translatingPageId === page.id" class="flex items-center gap-1">
+                      <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                      </svg>
+                      Menerjemah...
+                    </span>
+                    <span v-else>{{ '☾' }} Terjemah Halaman</span>
+                  </button>
+                </div>
+
+                <!-- Indonesian translation (only show after translate) -->
                 <div v-if="page.translated_id" class="pt-2" style="border-top: 1px dashed #e0d5c0;">
                   <p class="text-[10px] tracking-wider mb-1" style="color: #3a7a4d;">BAHASA INDONESIA</p>
                   <p class="text-sm leading-relaxed" style="color: #2a4a3a;">
-                    {{ (page.translated_id || '').substring(0, 300) }}{{ (page.translated_id || '').length > 300 ? '...' : '' }}
+                    {{ page.translated_id }}
                   </p>
                 </div>
 
@@ -473,7 +506,7 @@
                 <div v-if="page.translated_en" class="pt-1">
                   <p class="text-[10px] tracking-wider mb-1" style="color: #4a6a8a;">ENGLISH</p>
                   <p class="text-xs leading-relaxed" style="color: #2a3a4a;">
-                    {{ (page.translated_en || '').substring(0, 200) }}{{ (page.translated_en || '').length > 200 ? '...' : '' }}
+                    {{ page.translated_en }}
                   </p>
                 </div>
               </div>
@@ -560,7 +593,9 @@ const ocrError = ref<string | null>(null)
 const uploadStatus = ref('Mengupload...')
 const pdfList = ref<OCRPDFInfo[]>([])
 const pagesCache = ref<Record<number, OCRPage[]>>({})
+const pageEdits = ref<Record<number, string>>({})  // page_id → edited text
 const translatingPdfId = ref<number | null>(null)
+const translatingPageId = ref<number | null>(null)
 
 const config = useRuntimeConfig()
 
@@ -637,6 +672,58 @@ async function loadPages(pdfId: number) {
 }
 
 function getPages(pdfId: number): OCRPage[] { return pagesCache.value[pdfId] || [] }
+
+/* ── Editable text functions ── */
+function getPageText(page: OCRPage): string {
+  // Return edited text if available, otherwise original OCR text
+  if (pageEdits.value[page.id] !== undefined) return pageEdits.value[page.id]
+  return page.cleaned_text || page.raw_text || ''
+}
+
+function getEditedText(page: OCRPage): string {
+  // Return the text to translate: edited text, or fallback to original
+  const edited = pageEdits.value[page.id]
+  if (edited !== undefined && edited.trim()) return edited.trim()
+  return (page.cleaned_text || page.raw_text || '').trim()
+}
+
+function updatePageEdit(pageId: number, text: string) {
+  pageEdits.value[pageId] = text
+}
+
+function getEditLength(page: OCRPage): number {
+  const edited = pageEdits.value[page.id]
+  if (edited !== undefined) return edited.length
+  return (page.cleaned_text || page.raw_text || '').length
+}
+
+async function translatePage(pageId: number, pageNumber: number, text: string) {
+  if (!text) return
+  translatingPageId.value = pageId
+  try {
+    const res = await fetch(`${config.public.apiBase}/api/ocr/translate-page`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page_id: pageId, text }),
+    })
+    if (res.ok) {
+      // Refresh pages to show translations
+      // Find which PDF this page belongs to
+      for (const [pdfId, pages] of Object.entries(pagesCache.value)) {
+        if (pages.some(p => p.id === pageId)) {
+          await loadPages(Number(pdfId))
+          break
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Page translation error:', e)
+  } finally {
+    translatingPageId.value = null
+  }
+}
+
+
 
 function handleFileSelect(event: Event) {
   const input = event.target as HTMLInputElement

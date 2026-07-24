@@ -364,6 +364,11 @@ class OCRTranslateRequest(BaseModel):
     target: str = "id"  # "id", "en", or "both"
 
 
+class OCRTranslatePageRequest(BaseModel):
+    page_id: int
+    text: str  # The user-edited Arabic text
+
+
 class OCRTranslatePage(BaseModel):
     page_number: int
     translation_id: str = ""
@@ -570,6 +575,55 @@ def ocr_translate(request: OCRTranslateRequest):
         pdf_id=request.pdf_id,
         translated=len(results),
         results=results,
+    )
+
+
+@app.post("/api/ocr/translate-page")
+def ocr_translate_page(request: OCRTranslatePageRequest):
+    """Translate a single page with user-edited Arabic text.
+
+    The user can edit the OCR result in the frontend before sending
+    the corrected text here for translation.  Saves the corrected
+    text and translation to the database.
+    """
+    # Efficient direct lookup by page_id
+    page_row = ocr_db.get_page_by_id(request.page_id)
+    if not page_row:
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    if not request.text.strip():
+        return OCRTranslatePage(
+            page_number=page_row["page_number"],
+            translation_id="",
+            translation_en="",
+        )
+
+    trans_id, trans_en = _get_translators()
+
+    try:
+        tid = trans_id.translate(request.text) or ""
+    except Exception as e:
+        tid = f"[Translation error: {e}]"
+
+    try:
+        ten = trans_en.translate(request.text) or ""
+    except Exception:
+        ten = ""
+
+    # Save both the corrected text and the translation
+    ocr_db.save_page(
+        page_row["pdf_id"],
+        page_row["page_number"],
+        page_row.get("raw_text", ""),
+        request.text,  # Save the edited text as cleaned_text
+        page_row.get("confidence", 0.0),
+    )
+    ocr_db.save_translation(request.page_id, tid, ten)
+
+    return OCRTranslatePage(
+        page_number=page_row["page_number"],
+        translation_id=tid,
+        translation_en=ten,
     )
 
 

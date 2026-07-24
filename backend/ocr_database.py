@@ -119,6 +119,14 @@ class OCRDatabase:
 
     # ── Page operations ──────────────────────────────────────────────
 
+    def get_page_by_id(self, page_id: int) -> Optional[dict[str, Any]]:
+        """Get a single page record by its id (direct SQL lookup)."""
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT * FROM pages WHERE id = ?", (page_id,)
+            ).fetchone()
+            return dict(row) if row else None
+
     def save_page(
         self,
         pdf_id: int,
