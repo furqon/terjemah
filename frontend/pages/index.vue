@@ -1,22 +1,22 @@
 <template>
   <div class="min-h-screen bg-amber-50">
-    <header class="bg-emerald-800 text-white py-6 shadow-lg">
+    <header class="bg-emerald-800 text-white py-3 shadow">
       <div class="max-w-4xl mx-auto px-4">
-        <h1 class="text-3xl font-bold text-center">📖 Penerjemah Kitab</h1>
-        <p class="text-emerald-200 text-center mt-1">Langkah 4: Analisis Kata Per Kata</p>
+        <h1 class="text-xl font-bold text-center">Penerjemah Kitab</h1>
+        <p class="text-emerald-200 text-center text-xs mt-0.5">Analisis Kata Per Kata</p>
       </div>
     </header>
 
-    <main class="max-w-4xl mx-auto px-4 py-8">
+    <main class="max-w-4xl mx-auto px-4 py-4">
       <!-- Input -->
-      <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-        <label class="block text-lg font-semibold text-gray-700 mb-2">
-          Masukkan teks Arab:
+      <div class="bg-white rounded-lg shadow-sm border border-amber-100 p-4 mb-3">
+        <label class="block text-sm font-semibold text-gray-600 mb-1">
+          Teks Arab
         </label>
         <textarea
           v-model="inputText"
           placeholder="يكتب الطالب الدرس في المكتبة..."
-          class="w-full h-32 p-4 border-2 border-amber-200 rounded-lg text-lg
+          class="w-full h-24 p-3 border border-amber-200 rounded-lg text-base
                  focus:border-emerald-500 focus:outline-none resize-y
                  font-arabic transition-colors"
           dir="rtl"
@@ -25,19 +25,19 @@
         <button
           @click="analyze"
           :disabled="loading || !inputText.trim()"
-          class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800
-                 disabled:bg-gray-300 text-white font-bold py-3 px-6 rounded-lg
-                 transition-all duration-200 text-lg
+          class="mt-2 w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800
+                 disabled:bg-gray-300 text-white font-semibold py-2 px-4 rounded-lg
+                 transition-all duration-200 text-sm
                  disabled:cursor-not-allowed"
         >
-          <span v-if="loading" class="flex items-center justify-center gap-2">
-            <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+          <span v-if="loading" class="flex items-center justify-center gap-1.5">
+            <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
             </svg>
-            Memproses...
+            Memproses
           </span>
-          <span v-else>🌟 Analisis Teks</span>
+          <span v-else>Analisis Teks</span>
         </button>
       </div>
 
@@ -50,7 +50,7 @@
       >
         <div
           v-if="error"
-          class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6"
+          class="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded-lg mb-3 text-sm"
         >
           {{ error }}
         </div>
@@ -58,31 +58,31 @@
 
       <!-- Result -->
       <Transition
-        enter-active-class="transition duration-500 ease-out"
-        enter-from-class="opacity-0 translate-y-4"
+        enter-active-class="transition duration-400 ease-out"
+        enter-from-class="opacity-0 translate-y-3"
       >
-        <div v-if="result" class="space-y-6">
+        <div v-if="result" class="space-y-3">
           <!-- ── Harakat display ── -->
-          <div class="bg-white rounded-xl shadow-md p-6">
-            <h2 class="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2">
-              <span>✅ Hasil Harakat</span>
-              <span class="text-sm font-normal text-gray-400">({{ result.word_count }} kata)</span>
+          <div class="bg-white rounded-lg shadow-sm border border-amber-100 p-4">
+            <h2 class="text-base font-bold text-gray-700 mb-3 flex items-center gap-1.5">
+              <span>Hasil Harakat</span>
+              <span class="text-xs font-normal text-gray-400">({{ result.word_count }} kata)</span>
             </h2>
 
-            <div class="grid md:grid-cols-2 gap-6">
+            <div class="grid md:grid-cols-2 gap-3">
               <!-- Before -->
               <div>
-                <p class="text-sm text-gray-500 mb-2">Sebelum:</p>
-                <div class="bg-gray-50 rounded-lg p-4 text-right" dir="rtl">
-                  <p class="text-2xl">{{ result.original }}</p>
+                <p class="text-xs text-gray-400 mb-1">Sebelum:</p>
+                <div class="bg-gray-50 rounded border border-gray-100 p-3 text-right" dir="rtl">
+                  <p class="text-lg">{{ result.original }}</p>
                 </div>
               </div>
 
               <!-- After -->
               <div>
-                <p class="text-sm text-gray-500 mb-2">Sesudah (dengan Harakat):</p>
-                <div class="bg-emerald-50 border-2 border-emerald-200 rounded-lg p-4 text-right" dir="rtl">
-                  <p class="text-2xl text-emerald-700 font-arabic">{{ result.harakat }}</p>
+                <p class="text-xs text-gray-400 mb-1">Sesudah (dengan Harakat):</p>
+                <div class="bg-emerald-50 border border-emerald-200 rounded p-3 text-right" dir="rtl">
+                  <p class="text-lg text-emerald-700 font-arabic">{{ result.harakat }}</p>
                 </div>
               </div>
             </div>
@@ -90,62 +90,55 @@
             <!-- Copy button -->
             <button
               @click="copyResult"
-              class="mt-4 bg-amber-100 hover:bg-amber-200 text-amber-800
-                     font-medium py-2 px-4 rounded-lg transition-colors"
+              class="mt-3 text-xs bg-amber-50 hover:bg-amber-100 text-amber-700
+                     font-medium py-1.5 px-3 rounded transition-colors"
             >
-              📋 Salin Teks
+              Salin Teks
             </button>
           </div>
 
           <!-- ── Word cards ── -->
-          <div class="bg-white rounded-xl shadow-md p-6">
-            <h2 class="text-xl font-bold text-gray-700 mb-6 flex items-center gap-2">
-              <span>📝 Analisis Kata Per Kata</span>
+          <div class="bg-white rounded-lg shadow-sm border border-amber-100 p-4">
+            <h2 class="text-base font-bold text-gray-700 mb-3 flex items-center gap-1.5">
+              <span>Kata Per Kata</span>
             </h2>
 
-            <div class="flex flex-wrap gap-4 justify-center">
+            <div class="flex flex-wrap gap-2 justify-center">
               <div
                 v-for="(word, i) in result.words"
                 :key="i"
-                class="word-card bg-white border-2 border-emerald-200 rounded-xl
-                       p-4 text-center min-w-[130px] max-w-[160px] flex-1
-                       shadow-sm hover:shadow-lg transition-all duration-300
-                       hover:-translate-y-1 hover:border-emerald-400"
+                class="word-card bg-white border border-emerald-200 rounded-lg
+                       p-2.5 text-center min-w-[105px] max-w-[140px] flex-1
+                       hover:shadow transition-all duration-200
+                       hover:border-emerald-400"
               >
-                <!-- Word number badge -->
-                <div class="text-xs text-gray-400 mb-1">#{{ i + 1 }}</div>
-
-                <!-- Arabic word (large) -->
-                <p class="text-2xl font-arabic text-amber-900 mb-2" dir="rtl">
+                <!-- Arabic word -->
+                <p class="text-xl font-arabic text-amber-900" dir="rtl">
                   {{ word.word }}
                 </p>
 
-                <!-- Divider -->
-                <div class="border-t border-amber-100 my-2"></div>
-
-                <!-- Lemma -->
-                <p class="text-sm font-semibold text-emerald-700">{{ word.lemma }}</p>
+                <!-- Lemma (small) -->
+                <p class="text-xs font-semibold text-emerald-700 mt-1">{{ word.lemma }}</p>
 
                 <!-- Root -->
-                <p class="text-xs text-gray-400 mb-2" v-if="word.root && word.root !== '—'">
-                  (akar: {{ word.root }})
+                <p class="text-[10px] text-gray-400" v-if="word.root && word.root !== '—'">
+                  {{ word.root }}
                 </p>
 
                 <!-- POS badge -->
                 <span
-                  class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-bold
-                         transition-colors duration-200"
+                  class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
                   :class="posBadgeClass(word.pos_type)"
                 >
                   {{ word.pos_arabic }}
                 </span>
 
                 <!-- Translations: ID + EN -->
-                <div class="mt-2 space-y-1">
-                  <p v-if="word.gloss_id" class="text-xs font-medium text-emerald-600">
+                <div class="mt-1 leading-tight">
+                  <p v-if="word.gloss_id" class="text-[10px] font-medium text-emerald-600">
                     {{ word.gloss_id }}
                   </p>
-                  <p v-if="word.gloss_en" class="text-xs text-gray-400 italic">
+                  <p v-if="word.gloss_en" class="text-[10px] text-gray-400 italic">
                     {{ word.gloss_en }}
                   </p>
                 </div>
@@ -154,43 +147,43 @@
           </div>
 
           <!-- ── Summary table ── -->
-          <details class="bg-white rounded-xl shadow-md p-6 group">
+          <details class="bg-white rounded-lg shadow-sm border border-amber-100 p-3 group">
             <summary class="cursor-pointer text-emerald-700 hover:text-emerald-900
-                           font-semibold text-lg transition-colors
-                           flex items-center gap-2">
-              <span class="group-open:rotate-90 transition-transform duration-200">▶</span>
-              📋 Lihat Semua Detail
+                           font-medium text-sm transition-colors
+                           flex items-center gap-1.5">
+              <span class="group-open:rotate-90 transition-transform duration-200 text-xs">▶</span>
+              Detail Lengkap
             </summary>
-            <div class="mt-4 overflow-x-auto">
-              <table class="w-full text-sm">
+            <div class="mt-2 overflow-x-auto">
+              <table class="w-full text-xs">
                 <thead>
-                  <tr class="bg-amber-50 border-b-2 border-amber-200">
-                    <th class="p-3 text-left text-amber-800">#</th>
-                    <th class="p-3 text-right text-amber-800">Arab</th>
-                    <th class="p-3 text-left text-amber-800">Lemma</th>
-                    <th class="p-3 text-left text-amber-800">Akar</th>
-                    <th class="p-3 text-left text-amber-800">Jenis</th>
-                    <th class="p-3 text-left text-amber-800">Arti</th>
+                  <tr class="bg-amber-50 border-b border-amber-200">
+                    <th class="p-2 text-left text-amber-700">#</th>
+                    <th class="p-2 text-right text-amber-700">Arab</th>
+                    <th class="p-2 text-left text-amber-700">Lemma</th>
+                    <th class="p-2 text-left text-amber-700">Akar</th>
+                    <th class="p-2 text-left text-amber-700">Jenis</th>
+                    <th class="p-2 text-left text-amber-700">Arti</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr
                     v-for="(word, i) in result.words"
                     :key="'t'+i"
-                    class="border-b border-amber-100 hover:bg-amber-50 transition-colors"
+                    class="border-b border-amber-50 hover:bg-amber-50 transition-colors"
                   >
-                    <td class="p-3 text-gray-400">{{ i + 1 }}</td>
-                    <td class="p-3 font-arabic text-right text-lg" dir="rtl">{{ word.word }}</td>
-                    <td class="p-3 font-medium text-emerald-700">{{ word.lemma }}</td>
-                    <td class="p-3 text-gray-400">{{ word.root !== '—' ? word.root : '—' }}</td>
-                    <td class="p-3">
-                      <span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="posBadgeClass(word.pos_type)">
+                    <td class="p-2 text-gray-400">{{ i + 1 }}</td>
+                    <td class="p-2 font-arabic text-right text-base" dir="rtl">{{ word.word }}</td>
+                    <td class="p-2 font-medium text-emerald-700">{{ word.lemma }}</td>
+                    <td class="p-2 text-gray-400">{{ word.root !== '—' ? word.root : '—' }}</td>
+                    <td class="p-2">
+                      <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold" :class="posBadgeClass(word.pos_type)">
                         {{ word.pos_arabic }}
                       </span>
                     </td>
-                    <td class="p-3">
-                      <div class="text-emerald-700 text-xs font-medium">{{ word.gloss_id || '—' }}</div>
-                      <div v-if="word.gloss_en" class="text-gray-400 text-xs italic">{{ word.gloss_en }}</div>
+                    <td class="p-2">
+                      <div class="text-emerald-700 text-[10px] font-medium">{{ word.gloss_id || '—' }}</div>
+                      <div v-if="word.gloss_en" class="text-gray-400 text-[10px] italic">{{ word.gloss_en }}</div>
                     </td>
                   </tr>
                 </tbody>
@@ -201,8 +194,8 @@
       </Transition>
     </main>
 
-    <footer class="text-center text-gray-400 text-sm py-6">
-      Penerjemah Kitab — Dibangun langkah demi langkah
+    <footer class="text-center text-gray-400 text-xs py-4">
+      Penerjemah Kitab
     </footer>
   </div>
 </template>
