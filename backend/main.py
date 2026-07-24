@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from camel_tools.disambig.mle import MLEDisambiguator
+from dictionary import lookup as dict_lookup
 
 
 # ── Post-processing helpers ──────────────────────────────────────────
@@ -238,7 +239,9 @@ def analyze_words(text: str) -> AnalyzeResponse:
                 lemma = a.get('lex', words[idx])
                 root = a.get('root', '—')
                 pos_tag = a.get('pos', 'unknown')
-                gloss = a.get('gloss', '') or ''
+                # Use Indonesian dictionary if available, show '?' if not found
+                id_translation = dict_lookup(lemma)
+                gloss = id_translation if id_translation else '?'
                 pos_arabic = _map_pos(pos_tag)
             else:
                 word_form = harakat_words[idx] if idx < len(harakat_words) else words[idx]
