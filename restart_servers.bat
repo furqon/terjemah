@@ -45,7 +45,7 @@ if %errorlevel% equ 0 (
 echo.
 echo ============================================
 echo  Open http://localhost:3000 in your browser
-echo  API docs: http://localhost:8000/docs
+echo  API docs: http://localhost:8001/docs
 echo ============================================
 echo.
 echo If the greeting "السلام عليكم" still shows wrong output
