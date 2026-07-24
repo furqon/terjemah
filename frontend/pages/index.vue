@@ -16,20 +16,21 @@
     <main class="max-w-4xl mx-auto px-4 py-4">
       <!-- ── Tab Navigation ── -->
       <div class="flex gap-0 border-b mb-4" style="border-color: #d4c5a9;">
-        <button @click="activeTab = 'analyze'" class="px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200 relative"
+        <button @click="activeTab = 'analyze'" class="px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all"
           :style="activeTab === 'analyze' ? { background: '#fffdf5', color: '#2d5a3d', border: '1px solid #d4c5a9', borderBottom: '1px solid #fffdf5', marginBottom: '-1px' } : { color: '#a0896a', border: '1px solid transparent' }"
         ><span class="flex items-center gap-1.5"><span>📖</span> Analisis Teks</span></button>
-        <button @click="activeTab = 'scan'" class="px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200 relative"
+        <button @click="activeTab = 'scan'" class="px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all"
           :style="activeTab === 'scan' ? { background: '#fffdf5', color: '#2d5a3d', border: '1px solid #d4c5a9', borderBottom: '1px solid #fffdf5', marginBottom: '-1px' } : { color: '#a0896a', border: '1px solid transparent' }"
         ><span class="flex items-center gap-1.5"><span>📄</span> Scan PDF</span></button>
       </div>
 
-      <!-- ════ TAB 1: ANALISIS ════ -->
+      <!-- ════════════ TAB 1: ANALISIS TEKS ════════════ -->
       <div v-if="activeTab === 'analyze'">
         <div class="mb-3 rounded-lg" style="background: #fffdf5; border: 1px solid #e8dcc8; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <div class="p-3">
             <label class="block text-xs font-medium mb-1 tracking-wider" style="color: #8b7355;">Tulis Teks Arab</label>
-            <textarea v-model="inputText" placeholder="يكتب الطالب الدرس في المكتبة..." dir="rtl" class="w-full h-24 p-3 rounded-lg text-base font-arabic transition-colors resize-y"
+            <textarea v-model="inputText" placeholder="يكتب الطالب الدرس في المكتبة..." dir="rtl"
+              class="w-full h-24 p-3 rounded-lg text-base font-arabic transition-colors resize-y"
               style="background: #faf8f0; border: 1px solid #e0d5c0; color: #3a2a1a;"
               @focus="$event.target.style.borderColor = '#c9a84c'" @blur="$event.target.style.borderColor = '#e0d5c0'"></textarea>
             <button @click="analyze" :disabled="loading || !inputText.trim()"
@@ -41,17 +42,19 @@
             ><span v-if="loading" class="flex items-center justify-center gap-1.5"><svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Memproses...</span><span v-else>{{ '☾' }} Analisis Teks</span></button>
           </div>
         </div>
+
         <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 -translate-y-2" leave-active-class="transition duration-200 ease-in" leave-to-class="opacity-0 -translate-y-2">
           <div v-if="error" class="px-3 py-2 rounded-lg mb-3 text-sm" style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;">{{ error }}</div>
         </Transition>
+
         <Transition enter-active-class="transition duration-400 ease-out" enter-from-class="opacity-0 translate-y-4">
           <div v-if="result" class="space-y-3">
-            <!-- Kitab page display (existing analyze result) -->
+            <!-- Kitab page display -->
             <div class="relative overflow-hidden rounded-lg" style="background: #fffdf5; border: 1px solid #d4c5a9; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
               <div class="h-1" style="background: linear-gradient(90deg, #d4c5a9 0%, #c9a84c 30%, #c9a84c 70%, #d4c5a9 100%);"></div>
               <div class="text-center pt-4 pb-2 px-4">
                 <div class="text-xs tracking-widest" style="color: #8b7355;">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
-                <div class="mt-1" style="border-top: 1px solid #e8dcc8; width: 60px; margin-left: auto; margin-right: auto;"></div>
+                <div class="mt-1" style="border-top: 1px solid #e8dcc8; width: 60px; margin: 0 auto;"></div>
                 <div class="mt-2 flex items-center justify-center gap-2 text-xs" style="color: #a0896a;"><span>▸</span><span class="tracking-wider">Teks Arab</span><span>◂</span></div>
               </div>
               <div class="mx-4 p-4 text-center rounded" style="background: #faf8f0; border: 1px solid #e0d5c0;">
@@ -92,11 +95,13 @@
                 </div>
               </div>
               <div class="text-center pb-3">
-                <div style="border-top: 1px solid #e8dcc8; width: 40%; margin-left: auto; margin-right: auto;"></div>
+                <div style="border-top: 1px solid #e8dcc8; width: 40%; margin: 0 auto;"></div>
                 <p class="text-[10px] mt-2 tracking-wider" style="color: #a0896a;">{{ result.word_count }} kata — {{ result.original.length }} karakter</p>
               </div>
               <div class="h-1" style="background: linear-gradient(90deg, #d4c5a9 0%, #c9a84c 30%, #c9a84c 70%, #d4c5a9 100%);"></div>
             </div>
+
+            <!-- Translation results -->
             <div v-if="translating" class="rounded-lg p-4 text-center" style="background: #fffdf5; border: 1px solid #d4c5a9;"><p class="text-sm italic" style="color: #a0896a;">Menerjemahkan...</p></div>
             <div v-if="translation" class="rounded-lg overflow-hidden" style="background: #fffdf5; border: 1px solid #d4c5a9;">
               <div class="h-1" style="background: linear-gradient(90deg, #d4c5a9 0%, #3a7a4d 30%, #3a7a4d 70%, #d4c5a9 100%);"></div>
@@ -111,6 +116,8 @@
                 </div>
               </div>
             </div>
+
+            <!-- Detail table -->
             <details class="group rounded-lg overflow-hidden" style="background: #fffdf5; border: 1px solid #d4c5a9;">
               <summary class="cursor-pointer px-4 py-2.5 text-xs tracking-wider font-medium flex items-center justify-between transition-colors" style="color: #5a7a4a;">
                 <span class="flex items-center gap-1.5"><span class="transition-transform duration-200 group-open:rotate-90 text-sm" style="color: #c9a84c;">▸</span> Detail Lengkap</span>
@@ -137,145 +144,141 @@
         </Transition>
       </div>
 
-      <!-- ════ TAB 2: SCAN PDF ════ -->
+      <!-- ════════════ TAB 2: SCAN PDF ════════════ -->
       <div v-if="activeTab === 'scan'" class="space-y-4">
         <div class="px-3 py-2 rounded-lg text-xs flex items-center gap-2"
           :style="tesseractOk ? { background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534' } : { background: '#fefce8', border: '1px solid #fef08a', color: '#854d0e' }"
-        ><span>{{ tesseractOk ? '✓' : '⚠' }}</span><span><strong>Tesseract OCR:</strong> {{ tesseractOk ? tesseractVersion : 'Belum terinstal' }}</span></div>
+        ><span>{{ tesseractOk ? '✓' : '⚠' }}</span><span><strong>Tesseract:</strong> {{ tesseractOk ? tesseractVersion : 'Belum terinstal' }}</span></div>
 
         <div class="rounded-lg" style="background: #fffdf5; border: 1px solid #e8dcc8; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <div class="p-4">
-            <h2 class="text-sm font-bold mb-3" style="color: #3a2a1a;"><span class="mr-1">📁</span> Upload PDF</h2>
+            <h2 class="text-sm font-bold mb-3" style="color: #3a2a1a;"><span>📁</span> Upload PDF</h2>
             <div class="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors mb-3"
               :style="dragOver ? { borderColor: '#c9a84c', background: '#fdf8ec' } : { borderColor: '#e0d5c0', background: '#faf8f0' }"
               @dragover.prevent="dragOver = true" @dragleave="dragOver = false" @drop.prevent="handleDrop" @click="$refs.fileInput.click()"
             >
               <input ref="fileInput" type="file" accept=".pdf" class="hidden" @change="handleFileSelect" />
               <div class="text-3xl mb-2" style="color: #c9a84c;">📄</div>
-              <p class="text-sm font-medium" style="color: #3a2a1a;">{{ selectedFile ? selectedFile.name : 'Klik atau seret PDF ke sini' }}</p>
+              <p class="text-sm font-medium" style="color: #3a2a1a;">{{ selectedFile ? selectedFile.name : 'Klik atau seret PDF' }}</p>
               <p v-if="!selectedFile" class="text-xs mt-1" style="color: #a0896a;">Format PDF, maks 50MB</p>
               <p v-if="selectedFile && pdfInfo" class="text-xs mt-1" style="color: #5a7a4a;">{{ pdfInfo.total_pages }} halaman</p>
             </div>
             <div class="flex items-end gap-3">
-              <div><label class="text-[10px] block mb-1 tracking-wider" style="color: #8b7355;">Halaman dari</label>
+              <div><label class="text-[10px] block mb-1 tracking-wider" style="color: #8b7355;">Dari</label>
                 <input v-model.number="pageStart" type="number" min="1" class="w-16 p-2 border rounded text-sm text-center" style="border-color: #e0d5c0; background: #faf8f0; color: #3a2a1a;"></div>
-              <div><label class="text-[10px] block mb-1 tracking-wider" style="color: #8b7355;">sampai</label>
+              <div><label class="text-[10px] block mb-1 tracking-wider" style="color: #8b7355;">Sampai</label>
                 <input v-model.number="pageEnd" type="number" min="1" class="w-16 p-2 border rounded text-sm text-center" style="border-color: #e0d5c0; background: #faf8f0; color: #3a2a1a;"></div>
               <button @click="uploadAndProcess" :disabled="ocrProcessing || !selectedFile || !tesseractOk"
-                class="flex-1 py-2.5 rounded-lg text-sm font-medium tracking-wider transition-all duration-200 disabled:cursor-not-allowed"
-                style="background: linear-gradient(135deg, #2d5a3d, #1a3a2a); color: #f5f0e8;"
-                :style="ocrProcessing || !selectedFile || !tesseractOk ? { opacity: 0.5 } : {}">
-                <span v-if="ocrProcessing" class="flex items-center justify-center gap-1.5"><svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> {{ uploadStatus }}</span><span v-else>{{ '☾' }} Proses OCR</span></button>
+                class="flex-1 py-2.5 rounded-lg text-sm font-medium tracking-wider transition-all disabled:cursor-not-allowed"
+                style="background: linear-gradient(135deg, #2d5a3d, #1a3a2a); color: #f5f0e8;" :style="ocrProcessing || !selectedFile || !tesseractOk ? { opacity: 0.5 } : {}"
+              ><span v-if="ocrProcessing" class="flex items-center justify-center gap-1.5"><svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> {{ uploadStatus }}</span><span v-else>{{ '☾' }} Proses OCR</span></button>
             </div>
             <div v-if="ocrProcessing" class="mt-3">
-              <div class="flex justify-between text-xs mb-1" style="color: #8b7355;"><span>Halaman {{ ocrCurrentPage }} / {{ ocrTotalPages }}</span><span>{{ Math.round(ocrProgress * 100) }}%</span></div>
-              <div class="h-2 rounded-full overflow-hidden" style="background: #e0d5c0;"><div class="h-full rounded-full transition-all duration-300" style="background: linear-gradient(90deg, #c9a84c, #2d5a3d);" :style="{ width: (ocrProgress * 100) + '%' }"></div></div>
+              <div class="flex justify-between text-xs mb-1" style="color: #8b7355;"><span>Hal {{ ocrCurrentPage }}/{{ ocrTotalPages }}</span><span>{{ Math.round(ocrProgress * 100) }}%</span></div>
+              <div class="h-2 rounded-full overflow-hidden" style="background: #e0d5c0;"><div class="h-full rounded-full transition-all" style="background: linear-gradient(90deg, #c9a84c, #2d5a3d);" :style="{ width: (ocrProgress * 100) + '%' }"></div></div>
             </div>
           </div>
         </div>
 
-        <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 -translate-y-2" leave-active-class="transition duration-200 ease-in" leave-to-class="opacity-0 -translate-y-2">
-          <div v-if="ocrError" class="px-3 py-2 rounded-lg text-sm" style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;">{{ ocrError }}</div>
-        </Transition>
+        <div v-if="ocrError" class="px-3 py-2 rounded-lg text-sm" style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;">{{ ocrError }}</div>
 
+        <!-- PDF list with accordion pages -->
         <div v-if="pdfList.length > 0" class="space-y-3">
           <div v-for="pdf in pdfList" :key="pdf.id" class="rounded-lg overflow-hidden" style="background: #fffdf5; border: 1px solid #d4c5a9;">
             <div class="px-4 py-3 flex items-center justify-between" style="background: #faf8f0; border-bottom: 1px solid #e8dcc8;">
               <div class="flex items-center gap-2">
                 <span class="text-lg">📄</span>
                 <div><h3 class="text-sm font-semibold" style="color: #3a2a1a;">{{ pdf.filename }}</h3>
-                  <p class="text-[10px]" style="color: #a0896a;">{{ pdf.total_pages }} halaman • {{ pdf.pages_processed }} diproses • {{ pdf.pages_translated }} diterjemahkan</p></div>
+                  <p class="text-[10px]" style="color: #a0896a;">{{ pdf.total_pages }} hal • {{ pdf.pages_processed }} diproses • {{ pdf.pages_translated }} terjemah</p></div>
               </div>
               <div class="flex gap-1.5">
                 <button v-if="pdf.pages_processed > 0 && pdf.pages_translated < pdf.pages_processed" @click="translatePdf(pdf.id)" :disabled="translatingPdfId === pdf.id"
-                  class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200 disabled:opacity-50" style="background: #c9a84c; color: white;">
-                  {{ translatingPdfId === pdf.id ? 'Menerjemah...' : 'Terjemah' }}</button>
-                <button @click="deletePdf(pdf.id)" class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200"
-                  style="background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;"
-                  @mouseenter="$event.target.style.background = '#fee2e2'" @mouseleave="$event.target.style.background = '#fef2f2'">Hapus</button>
+                  class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all disabled:opacity-50" style="background: #c9a84c; color: white;">
+                  {{ translatingPdfId === pdf.id ? '...' : 'Terjemah Semua' }}</button>
+                <button @click="deletePdf(pdf.id)" class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all"
+                  style="background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;">Hapus</button>
               </div>
             </div>
             <div class="px-4 pb-3">
-              <div v-for="page in getPages(pdf.id)" :key="page.id" class="mt-2 p-3 rounded-lg" style="background: #faf8f0; border: 1px solid #e0d5c0;">
-                <!-- Page header -->
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs font-medium" style="color: #8b7355;">Halaman {{ page.page_number }}</span>
-                  <span class="flex items-center gap-1.5">
-                    <span v-if="pageEdits[page.id] !== undefined && !editingPages[page.id]" class="text-[9px]" style="color: #c9a84c;">✎ diedit</span>
+              <!-- Accordion page card -->
+              <div v-for="page in getPages(pdf.id)" :key="page.id" class="mt-2 rounded-lg overflow-hidden" style="border: 1px solid #e0d5c0;">
+                <!-- Clickable header -->
+                <div @click="toggleExpand(page.id)"
+                  class="flex items-center justify-between px-3 py-2 cursor-pointer select-none transition-colors"
+                  style="background: #faf8f0;"
+                  @mouseenter="$event.currentTarget.style.background = '#f5f0e0'" @mouseleave="$event.currentTarget.style.background = '#faf8f0'"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs inline-block transition-transform duration-200" :style="{ transform: expandedPages[page.id] ? 'rotate(90deg)' : 'rotate(0deg)' }" style="color: #a0896a;">▸</span>
+                    <span class="text-xs font-medium" style="color: #8b7355;">Halaman {{ page.page_number }}</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span v-if="pageEdits[page.id] !== undefined && !editingPages[page.id]" class="text-[9px]" style="color: #c9a84c;">✎</span>
                     <span class="text-[10px] px-1.5 py-0.5 rounded" :style="page.confidence >= 0.8 ? { background: '#dcfce7', color: '#166534' } : page.confidence >= 0.5 ? { background: '#fef9c3', color: '#854d0e' } : { background: '#fee2e2', color: '#991b1b' }">
                       {{ Math.round(page.confidence * 100) }}%</span>
-                  </span>
-                </div>
-
-                <!-- VIEW MODE: static text + Edit button -->
-                <div v-if="!editingPages[page.id]">
-                  <div class="mb-2" dir="rtl">
-                    <p class="text-[10px] tracking-wider mb-1" style="color: #8b7355;">TEKS ARAB</p>
-                    <p class="text-lg font-arabic leading-relaxed" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ getPageText(page) }}</p>
-                  </div>
-                  <div class="flex justify-end gap-1.5">
-                    <button @click="toggleEdit(page.id, true)" class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200 flex items-center gap-1"
-                      style="background: #e0d5c0; color: #3a2a1a;"
-                      @mouseenter="$event.target.style.background = '#d4c5a9'" @mouseleave="$event.target.style.background = '#e0d5c0'">✎ Edit</button>
-                    <button @click="translatePage(page.id, page.page_number, getEditedText(page))" :disabled="translatingPageId === page.id"
-                      class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200 disabled:opacity-50 flex items-center gap-1"
-                      style="background: #c9a84c; color: white;"
-                      @mouseenter="translatingPageId !== page.id && ($event.target.style.background = '#b89430')" @mouseleave="translatingPageId !== page.id && ($event.target.style.background = '#c9a84c')"
-                    ><span v-if="translatingPageId === page.id"><svg class="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg></span>
-                      <span v-else>{{ '☾' }} Terjemah</span></button>
+                    <span v-if="page.translated_id" class="text-[9px]" style="color: #3a7a4d;">✓</span>
                   </div>
                 </div>
 
-                <!-- EDIT MODE: textarea + Save / Tashkeel / Terjemah -->
-                <div v-else>
-                  <div class="mb-2">
-                    <div class="flex items-center justify-between mb-1">
-                      <p class="text-[10px] tracking-wider" style="color: #8b7355;">EDIT TEKS ARAB</p>
-                      <span class="text-[9px]" style="color: #a0896a;">{{ getEditLength(page) }} karakter</span>
+                <!-- Expandable content -->
+                <div v-if="expandedPages[page.id]" class="px-3 py-3" style="background: #fffdf5; border-top: 1px solid #e0d5c0;">
+                  <!-- VIEW MODE -->
+                  <div v-if="!editingPages[page.id]">
+                    <div class="mb-2" dir="rtl">
+                      <p class="text-[10px] tracking-wider mb-1" style="color: #8b7355;">TEKS ARAB</p>
+                      <p class="text-base font-arabic leading-relaxed" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ getPageText(page) }}</p>
                     </div>
-                    <textarea
-                      :value="getPageText(page)" @input="updatePageEdit(page.id, ($event.target as HTMLTextAreaElement).value)"
-                      dir="rtl" class="w-full p-2.5 rounded-lg text-base font-arabic leading-relaxed resize-y transition-colors"
-                      style="background: #fffdf5; border: 1px solid #c9a84c; color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif; min-height: 80px;"></textarea>
+                    <div class="flex justify-end gap-1.5">
+                      <button @click="toggleEdit(page.id, true)" class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all flex items-center gap-1" style="background: #e0d5c0; color: #3a2a1a;">✎ Edit</button>
+                      <button @click="translatePage(page.id, page.page_number, getEditedText(page))" :disabled="translatingPageId === page.id"
+                        class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all disabled:opacity-50 flex items-center gap-1"
+                        style="background: #c9a84c; color: white;"
+                      ><span v-if="translatingPageId === page.id"><svg class="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg></span><span v-else>{{ '☾' }} Terjemah</span></button>
+                    </div>
                   </div>
-                  <div class="flex justify-end gap-1.5 flex-wrap">
-                    <button @click="savePageText(page)" :disabled="savingPageIds[page.id]"
-                      class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200 disabled:opacity-50 flex items-center gap-1"
-                      style="background: #2d5a3d; color: white;"
-                      @mouseenter="!savingPageIds[page.id] && ($event.target.style.background = '#3a7a4d')" @mouseleave="!savingPageIds[page.id] && ($event.target.style.background = '#2d5a3d')"
-                    >{{ savingPageIds[page.id] ? 'Menyimpan...' : '💾 Save' }}</button>
-                    <button @click="tashkeelPageText(page)" :disabled="tashkeelingPageIds[page.id]"
-                      class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200 disabled:opacity-50 flex items-center gap-1"
-                      style="background: #6b21a8; color: white;"
-                      @mouseenter="!tashkeelingPageIds[page.id] && ($event.target.style.background = '#7c3aed')" @mouseleave="!tashkeelingPageIds[page.id] && ($event.target.style.background = '#6b21a8')"
-                    >{{ tashkeelingPageIds[page.id] ? 'Tashkeel...' : '◌ Tashkeel' }}</button>
-                    <button @click="translatePage(page.id, page.page_number, getEditedText(page))" :disabled="translatingPageId === page.id"
-                      class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all duration-200 disabled:opacity-50 flex items-center gap-1"
-                      style="background: #c9a84c; color: white;"
-                      @mouseenter="translatingPageId !== page.id && ($event.target.style.background = '#b89430')" @mouseleave="translatingPageId !== page.id && ($event.target.style.background = '#c9a84c')"
-                    ><span v-if="translatingPageId === page.id"><svg class="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg></span>
-                      <span v-else>{{ '☾' }} Terjemah</span></button>
+                  <!-- EDIT MODE -->
+                  <div v-else>
+                    <div class="mb-2">
+                      <div class="flex items-center justify-between mb-1">
+                        <p class="text-[10px] tracking-wider" style="color: #8b7355;">EDIT TEKS ARAB</p>
+                        <span class="text-[9px]" style="color: #a0896a;">{{ getEditLength(page) }} karakter</span>
+                      </div>
+                      <textarea :value="getPageText(page)" @input="updatePageEdit(page.id, ($event.target as HTMLTextAreaElement).value)" dir="rtl"
+                        class="w-full p-2.5 rounded-lg text-base font-arabic leading-relaxed resize-y transition-colors"
+                        style="background: #fffdf5; border: 1px solid #c9a84c; color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif; min-height: 80px;"></textarea>
+                    </div>
+                    <div class="flex justify-end gap-1.5 flex-wrap">
+                      <button @click="savePageText(page)" :disabled="savingPageIds[page.id]"
+                        class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all disabled:opacity-50 flex items-center gap-1"
+                        style="background: #2d5a3d; color: white;">{{ savingPageIds[page.id] ? 'Menyimpan...' : '💾 Save' }}</button>
+                      <button @click="tashkeelPageText(page)" :disabled="tashkeelingPageIds[page.id]"
+                        class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all disabled:opacity-50 flex items-center gap-1"
+                        style="background: #6b21a8; color: white;">{{ tashkeelingPageIds[page.id] ? 'Tashkeel...' : '◌ Tashkeel' }}</button>
+                      <button @click="translatePage(page.id, page.page_number, getEditedText(page))" :disabled="translatingPageId === page.id"
+                        class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all disabled:opacity-50 flex items-center gap-1"
+                        style="background: #c9a84c; color: white;"
+                      ><span v-if="translatingPageId === page.id"><svg class="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg></span><span v-else>{{ '☾' }} Terjemah</span></button>
+                    </div>
                   </div>
-                </div>
-
-                <!-- Translation results -->
-                <div v-if="page.translated_id" class="pt-2 mt-2" style="border-top: 1px dashed #e0d5c0;">
-                  <p class="text-[10px] tracking-wider mb-1" style="color: #3a7a4d;">BAHASA INDONESIA</p>
-                  <p class="text-sm leading-relaxed" style="color: #2a4a3a;">{{ page.translated_id }}</p>
-                </div>
-                <div v-if="page.translated_en" class="pt-1">
-                  <p class="text-[10px] tracking-wider mb-1" style="color: #4a6a8a;">ENGLISH</p>
-                  <p class="text-xs leading-relaxed" style="color: #2a3a4a;">{{ page.translated_en }}</p>
+                  <!-- Translation results inside accordion -->
+                  <div v-if="page.translated_id" class="pt-2 mt-2" style="border-top: 1px dashed #e0d5c0;">
+                    <p class="text-[10px] tracking-wider mb-1" style="color: #3a7a4d;">BAHASA INDONESIA</p>
+                    <p class="text-sm leading-relaxed" style="color: #2a4a3a;">{{ page.translated_id }}</p>
+                  </div>
+                  <div v-if="page.translated_en" class="pt-1">
+                    <p class="text-[10px] tracking-wider mb-1" style="color: #4a6a8a;">ENGLISH</p>
+                    <p class="text-xs leading-relaxed" style="color: #2a3a4a;">{{ page.translated_en }}</p>
+                  </div>
                 </div>
               </div>
-              <div v-if="getPages(pdf.id).length === 0" class="mt-2 p-4 text-center text-xs italic" style="color: #a0896a;">Belum ada halaman yang diproses.</div>
+              <div v-if="getPages(pdf.id).length === 0" class="mt-2 p-4 text-center text-xs italic" style="color: #a0896a;">Belum ada halaman.</div>
             </div>
           </div>
         </div>
         <div v-if="pdfList.length === 0" class="rounded-lg p-8 text-center" style="background: #faf8f0; border: 1px dashed #e0d5c0;">
           <div class="text-4xl mb-3" style="color: #d4c5a9;">📄</div>
           <p class="text-sm font-medium" style="color: #8b7355;">Belum ada PDF</p>
-          <p class="text-xs mt-1" style="color: #a0896a;">Upload PDF kitab untuk memulai OCR dan terjemahan</p>
+          <p class="text-xs mt-1" style="color: #a0896a;">Upload PDF untuk memulai OCR dan terjemahan</p>
         </div>
       </div>
     </main>
@@ -294,23 +297,15 @@
 import { ref, onMounted } from 'vue'
 
 /* ── Types ── */
-interface WordAnalysis {
-  word: string; lemma: string; root: string; pos_type: string; pos_arabic: string; gloss_id: string; gloss_en: string
-}
-interface AnalyzeResponse {
-  original: string; harakat: string; words: WordAnalysis[]; word_count: number
-}
-interface OCRPDFInfo {
-  id: number; filename: string; total_pages: number; uploaded_at: string; pages_processed: number; pages_translated: number
-}
-interface OCRPage {
-  id: number; pdf_id: number; page_number: number; raw_text: string; cleaned_text: string; confidence: number; translated_id: string; translated_en: string
-}
+interface WordAnalysis { word: string; lemma: string; root: string; pos_type: string; pos_arabic: string; gloss_id: string; gloss_en: string }
+interface AnalyzeResponse { original: string; harakat: string; words: WordAnalysis[]; word_count: number }
+interface OCRPDFInfo { id: number; filename: string; total_pages: number; uploaded_at: string; pages_processed: number; pages_translated: number }
+interface OCRPage { id: number; pdf_id: number; page_number: number; raw_text: string; cleaned_text: string; confidence: number; translated_id: string; translated_en: string }
 
 /* ── Tab state ── */
 const activeTab = ref<'analyze' | 'scan'>('analyze')
 
-/* ── Analyze tab state ── */
+/* ── Analyze tab ── */
 const inputText = ref('')
 const result = ref<AnalyzeResponse | null>(null)
 const loading = ref(false)
@@ -319,24 +314,19 @@ const translating = ref(false)
 const translation = ref<{ translation_id: string; translation_en: string } | null>(null)
 let _translateId = 0
 
-/* ── Scan PDF tab state ── */
+/* ── Scan PDF tab ── */
 const tesseractOk = ref(false)
 const tesseractVersion = ref('')
 const selectedFile = ref<File | null>(null)
 const pdfInfo = ref<{ total_pages: number } | null>(null)
-const pageStart = ref(1)
-const pageEnd = ref(1)
+const pageStart = ref(1); const pageEnd = ref(1)
 const dragOver = ref(false)
-const ocrProcessing = ref(false)
-const ocrProgress = ref(0)
-const ocrCurrentPage = ref(0)
-const ocrTotalPages = ref(0)
-const ocrError = ref<string | null>(null)
-const uploadStatus = ref('Mengupload...')
-const pdfList = ref<OCRPDFInfo[]>([])
-const pagesCache = ref<Record<number, OCRPage[]>>({})
+const ocrProcessing = ref(false); const ocrProgress = ref(0); const ocrCurrentPage = ref(0); const ocrTotalPages = ref(0)
+const ocrError = ref<string | null>(null); const uploadStatus = ref('Mengupload...')
+const pdfList = ref<OCRPDFInfo[]>([]); const pagesCache = ref<Record<number, OCRPage[]>>({})
 
-// Per-page action states
+/* ── Per-page state ── */
+const expandedPages = ref<Record<number, boolean>>({})  // starts empty = all collapsed
 const pageEdits = ref<Record<number, string>>({})
 const editingPages = ref<Record<number, boolean>>({})
 const savingPageIds = ref<Record<number, boolean>>({})
@@ -360,186 +350,86 @@ function posBadgeClass(type: string): string { return posColors[type] || 'defaul
 async function analyze() {
   loading.value = true; error.value = null; result.value = null
   try {
-    const res = await fetch(`${config.public.apiBase}/api/analyze`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: inputText.value }),
-    })
+    const res = await fetch(`${config.public.apiBase}/api/analyze`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: inputText.value }) })
     if (!res.ok) throw new Error(`Error: ${res.status}`)
     result.value = await res.json()
     translateText(inputText.value)
-  } catch (e) { error.value = e instanceof Error ? e.message : 'Gagal menghubungi server' }
+  } catch (e) { error.value = e instanceof Error ? e.message : 'Gagal' }
   finally { loading.value = false }
 }
-
 async function translateText(text: string) {
-  const requestId = ++_translateId
-  translating.value = true; translation.value = null
+  const requestId = ++_translateId; translating.value = true; translation.value = null
   try {
-    const res = await fetch(`${config.public.apiBase}/api/translate`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    })
-    if (!res.ok) return
-    const data = await res.json()
-    if (requestId !== _translateId) return
+    const res = await fetch(`${config.public.apiBase}/api/translate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) })
+    if (!res.ok) return; const data = await res.json(); if (requestId !== _translateId) return
     translation.value = { translation_id: data.translation_id, translation_en: data.translation_en }
-  } catch { /* ignore */ }
-  finally { translating.value = false }
+  } catch { /* ignore */ } finally { translating.value = false }
 }
+async function copyResult() { if (result.value?.harakat) { await navigator.clipboard.writeText(result.value.harakat) } }
 
-async function copyResult() {
-  if (result.value?.harakat) { await navigator.clipboard.writeText(result.value.harakat); alert('Teks berhasil disalin!') }
-}
+/* ── Accordion ── */
+function toggleExpand(pageId: number) { expandedPages.value[pageId] = !expandedPages.value[pageId] }
 
-/* ── OCR functions ── */
+/* ── OCR helpers ── */
 async function checkTesseract() {
-  try {
-    const res = await fetch(`${config.public.apiBase}/api/ocr/health`)
-    const data = await res.json()
-    tesseractOk.value = data.tesseract_installed
-    tesseractVersion.value = data.tesseract_version
-  } catch { tesseractOk.value = false; tesseractVersion.value = '' }
+  try { const res = await fetch(`${config.public.apiBase}/api/ocr/health`); const d = await res.json(); tesseractOk.value = d.tesseract_installed; tesseractVersion.value = d.tesseract_version } catch { tesseractOk.value = false }
 }
-
-async function loadPdfList() {
-  try {
-    const res = await fetch(`${config.public.apiBase}/api/ocr/pdfs`)
-    if (res.ok) pdfList.value = await res.json()
-  } catch { /* ignore */ }
-}
-
-async function loadPages(pdfId: number) {
-  try {
-    const res = await fetch(`${config.public.apiBase}/api/ocr/pages/${pdfId}`)
-    if (res.ok) { const data = await res.json(); pagesCache.value[pdfId] = data.pages }
-  } catch { /* ignore */ }
-}
-
+async function loadPdfList() { try { const res = await fetch(`${config.public.apiBase}/api/ocr/pdfs`); if (res.ok) pdfList.value = await res.json() } catch { /* ignore */ } }
+async function loadPages(pdfId: number) { try { const res = await fetch(`${config.public.apiBase}/api/ocr/pages/${pdfId}`); if (res.ok) { const d = await res.json(); pagesCache.value[pdfId] = d.pages } } catch { /* ignore */ } }
 function getPages(pdfId: number): OCRPage[] { return pagesCache.value[pdfId] || [] }
 
-/* ── View/Edit mode ── */
-function toggleEdit(pageId: number, editing: boolean) {
-  editingPages.value[pageId] = editing
-}
+/* ── Edit functions ── */
+function getPageText(page: OCRPage): string { return pageEdits.value[page.id] !== undefined ? pageEdits.value[page.id] : (page.cleaned_text || page.raw_text || '') }
+function getEditedText(page: OCRPage): string { const e = pageEdits.value[page.id]; return (e !== undefined && e.trim()) ? e.trim() : (page.cleaned_text || page.raw_text || '').trim() }
+function updatePageEdit(id: number, text: string) { pageEdits.value[id] = text }
+function getEditLength(page: OCRPage): number { const e = pageEdits.value[page.id]; return e !== undefined ? e.length : (page.cleaned_text || page.raw_text || '').length }
+function toggleEdit(id: number, editing: boolean) { editingPages.value[id] = editing }
 
-/* ── Editable text functions ── */
-function getPageText(page: OCRPage): string {
-  if (pageEdits.value[page.id] !== undefined) return pageEdits.value[page.id]
-  return page.cleaned_text || page.raw_text || ''
-}
-
-function getEditedText(page: OCRPage): string {
-  const edited = pageEdits.value[page.id]
-  if (edited !== undefined && edited.trim()) return edited.trim()
-  return (page.cleaned_text || page.raw_text || '').trim()
-}
-
-function updatePageEdit(pageId: number, text: string) {
-  pageEdits.value[pageId] = text
-}
-
-function getEditLength(page: OCRPage): number {
-  const edited = pageEdits.value[page.id]
-  if (edited !== undefined) return edited.length
-  return (page.cleaned_text || page.raw_text || '').length
-}
-
-/* ── Save edited text ── */
+/* ── Save ── */
 async function savePageText(page: OCRPage) {
-  const text = getEditedText(page)
-  if (!text) return
+  const text = getEditedText(page); if (!text) return
   savingPageIds.value[page.id] = true
   try {
-    const res = await fetch(`${config.public.apiBase}/api/ocr/save-page`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page_id: page.id, text }),
-    })
-    if (res.ok) {
-      // Exit edit mode and refresh to show saved text
-      toggleEdit(page.id, false)
-      // Find the PDF this page belongs to and refresh
-      for (const [pid, pages] of Object.entries(pagesCache.value)) {
-        if (pages.some(p => p.id === page.id)) {
-          await loadPages(Number(pid))
-          break
-        }
-      }
-    }
-  } catch { /* ignore */ }
-  finally { savingPageIds.value[page.id] = false }
+    const res = await fetch(`${config.public.apiBase}/api/ocr/save-page`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page_id: page.id, text }) })
+    if (res.ok) { toggleEdit(page.id, false); for (const [pid, pages] of Object.entries(pagesCache.value)) { if (pages.some(p => p.id === page.id)) { await loadPages(Number(pid)); break } } }
+  } catch { /* ignore */ } finally { savingPageIds.value[page.id] = false }
 }
 
-/* ── Tashkeel (diacritization) ── */
+/* ── Tashkeel ── */
 async function tashkeelPageText(page: OCRPage) {
-  const text = getEditedText(page)
-  if (!text) return
+  const text = getEditedText(page); if (!text) return
   tashkeelingPageIds.value[page.id] = true
   try {
-    const res = await fetch(`${config.public.apiBase}/api/ocr/tashkeel-page`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    })
-    if (res.ok) {
-      const data = await res.json()
-      // Update the edit buffer with the diacritized text
-      updatePageEdit(page.id, data.harakat)
-    }
-  } catch { /* ignore */ }
-  finally { tashkeelingPageIds.value[page.id] = false }
+    let res = await fetch(`${config.public.apiBase}/api/ocr/tashkeel-page`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) })
+    if (!res.ok) { res = await fetch(`${config.public.apiBase}/api/tashkeel`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) }) }
+    if (res.ok) { const data = await res.json(); updatePageEdit(page.id, data.harakat) }
+  } catch { /* ignore */ } finally { tashkeelingPageIds.value[page.id] = false }
 }
 
 /* ── Translate page ── */
-async function translatePage(pageId: number, _pageNumber: number, text: string) {
-  if (!text) return
-  translatingPageId.value = pageId
+async function translatePage(pageId: number, _pn: number, text: string) {
+  if (!text) return; translatingPageId.value = pageId
   try {
-    const res = await fetch(`${config.public.apiBase}/api/ocr/translate-page`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page_id: pageId, text }),
-    })
-    if (res.ok) {
-      for (const [pid, pages] of Object.entries(pagesCache.value)) {
-        if (pages.some(p => p.id === pageId)) {
-          await loadPages(Number(pid))
-          toggleEdit(pageId, false)
-          break
-        }
-      }
-    }
-  } catch { /* ignore */ }
-  finally { translatingPageId.value = null }
+    const res = await fetch(`${config.public.apiBase}/api/ocr/translate-page`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page_id: pageId, text }) })
+    if (res.ok) { for (const [pid, pages] of Object.entries(pagesCache.value)) { if (pages.some(p => p.id === pageId)) { await loadPages(Number(pid)); toggleEdit(pageId, false); break } } }
+  } catch { /* ignore */ } finally { translatingPageId.value = null }
 }
 
-/* ── Bulk translate all pages ── */
+/* ── Bulk translate ── */
 async function translatePdf(pdfId: number) {
   translatingPdfId.value = pdfId
-  try {
-    const res = await fetch(`${config.public.apiBase}/api/ocr/translate`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pdf_id: pdfId }),
-    })
-    if (res.ok) { await loadPdfList(); await loadPages(pdfId) }
-  } catch { /* ignore */ }
+  try { const res = await fetch(`${config.public.apiBase}/api/ocr/translate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pdf_id: pdfId }) }); if (res.ok) { await loadPdfList(); await loadPages(pdfId) } } catch { /* ignore */ }
   finally { translatingPdfId.value = null }
 }
 
-/* ── Delete PDF ── */
+/* ── Delete ── */
 async function deletePdf(pdfId: number) {
-  try {
-    const res = await fetch(`${config.public.apiBase}/api/ocr/delete/${pdfId}`, { method: 'POST' })
-    if (res.ok) { delete pagesCache.value[pdfId]; await loadPdfList() }
-  } catch { /* ignore */ }
+  try { const res = await fetch(`${config.public.apiBase}/api/ocr/delete/${pdfId}`, { method: 'POST' }); if (res.ok) { delete pagesCache.value[pdfId]; await loadPdfList() } } catch { /* ignore */ }
 }
 
-/* ── Upload & Process ── */
-function handleFileSelect(event: Event) {
-  const input = event.target as HTMLInputElement
-  if (input.files && input.files[0]) setFile(input.files[0])
-}
-function handleDrop(event: DragEvent) {
-  dragOver.value = false
-  if (event.dataTransfer?.files[0]) setFile(event.dataTransfer.files[0])
-}
+/* ── Upload ── */
+function handleFileSelect(event: Event) { const input = event.target as HTMLInputElement; if (input.files?.[0]) setFile(input.files[0]) }
+function handleDrop(event: DragEvent) { dragOver.value = false; if (event.dataTransfer?.files[0]) setFile(event.dataTransfer.files[0]) }
 function setFile(file: File) { selectedFile.value = file; pdfInfo.value = null }
 
 async function uploadAndProcess() {
@@ -547,41 +437,30 @@ async function uploadAndProcess() {
   ocrProcessing.value = true; ocrError.value = null; ocrProgress.value = 0
   try {
     uploadStatus.value = 'Mengupload...'
-    const formData = new FormData()
-    formData.append('file', selectedFile.value)
-    const uploadRes = await fetch(`${config.public.apiBase}/api/ocr/upload`, { method: 'POST', body: formData })
-    if (!uploadRes.ok) throw new Error('Gagal upload PDF')
-    const uploadData = await uploadRes.json()
-    const pdfId = uploadData.pdf_id
-    const maxPages = uploadData.total_pages
+    const fd = new FormData(); fd.append('file', selectedFile.value)
+    const uRes = await fetch(`${config.public.apiBase}/api/ocr/upload`, { method: 'POST', body: fd })
+    if (!uRes.ok) throw new Error('Gagal upload')
+    const uData = await uRes.json(); const pdfId = uData.pdf_id; const maxPages = uData.total_pages
     pageStart.value = 1; pageEnd.value = maxPages
-    const start = Math.max(1, pageStart.value); const end = Math.min(maxPages, pageEnd.value)
-    if (start > end) { ocrError.value = 'Halaman awal harus ≤ halaman akhir'; ocrProcessing.value = false; return }
-    ocrTotalPages.value = end - start + 1
-    uploadStatus.value = 'OCR...'
-    for (let pg = start; pg <= end; pg++) {
-      ocrCurrentPage.value = pg - start + 1; ocrProgress.value = (pg - start + 1) / ocrTotalPages.value
-      uploadStatus.value = `OCR halaman ${pg}/${end}...`
-      const processRes = await fetch(`${config.public.apiBase}/api/ocr/process`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pdf_id: pdfId, page_start: pg, page_end: pg }),
-      })
-      if (!processRes.ok) { const errData = await processRes.json().catch(() => ({})); throw new Error(errData.detail || 'Gagal proses OCR') }
+    ocrTotalPages.value = maxPages; uploadStatus.value = 'OCR...'
+    for (let pg = 1; pg <= maxPages; pg++) {
+      ocrCurrentPage.value = pg; ocrProgress.value = pg / maxPages; uploadStatus.value = `OCR hal ${pg}/${maxPages}...`
+      const pRes = await fetch(`${config.public.apiBase}/api/ocr/process`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pdf_id: pdfId, page_start: pg, page_end: pg }) })
+      if (!pRes.ok) throw new Error('Gagal OCR')
     }
-    ocrProgress.value = 1
-    await loadPdfList(); await loadPages(pdfId)
-    selectedFile.value = null; pdfInfo.value = null
-  } catch (e) { ocrError.value = e instanceof Error ? e.message : 'Gagal memproses OCR' }
+    ocrProgress.value = 1; await loadPdfList(); await loadPages(pdfId); selectedFile.value = null; pdfInfo.value = null
+  } catch (e) { ocrError.value = e instanceof Error ? e.message : 'Gagal' }
   finally { ocrProcessing.value = false }
 }
 
-/* ── Init ── */
 onMounted(() => { checkTesseract(); loadPdfList() })
 </script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
 .font-arabic { font-family: 'Amiri', 'Traditional Arabic', serif !important; }
+
+/* POS badge colors */
 .noun-badge { background: #dcfce7; color: #166534; }
 .verb-badge { background: #ffedd5; color: #9a3412; }
 .prep-badge { background: #f3e8ff; color: #6b21a8; }
@@ -596,6 +475,8 @@ onMounted(() => { checkTesseract(); loadPdfList() })
 .num-badge { background: #ecfccb; color: #3f6212; }
 .rel-badge { background: #f3e8ff; color: #6b21a8; }
 .default-badge { background: #f3f4f6; color: #4b5563; }
+
+/* Word card animations */
 .word-card { transition: all 0.3s ease; animation: kitabReveal 0.5s ease-out both; }
 .word-card:hover { transform: translateY(-2px); z-index: 10; }
 .word-card:hover > div { box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px; }
@@ -615,6 +496,8 @@ onMounted(() => { checkTesseract(); loadPdfList() })
 .word-card:nth-child(13) { animation-delay: 0.60s; }
 .word-card:nth-child(14) { animation-delay: 0.65s; }
 .word-card:nth-child(15) { animation-delay: 0.70s; }
+
+/* Hover states */
 .noun-badge:hover { background: #bbf7d0; }
 .verb-badge:hover { background: #fed7aa; }
 .prep-badge:hover { background: #e9d5ff; }
