@@ -163,7 +163,8 @@ class WordAnalysis(BaseModel):
     root: str          # Root letters (e.g., كتب)
     pos_type: str      # POS type in English (noun, verb, prep, etc.)
     pos_arabic: str    # POS type in Arabic (إسم, فعل, حرف, etc.)
-    gloss: str         # English gloss / meaning
+    gloss_id: str      # Indonesian translation
+    gloss_en: str      # English gloss / meaning
 
 
 class AnalyzeResponse(BaseModel):
@@ -239,9 +240,9 @@ def analyze_words(text: str) -> AnalyzeResponse:
                 lemma = a.get('lex', words[idx])
                 root = a.get('root', '—')
                 pos_tag = a.get('pos', 'unknown')
-                # Use Indonesian dictionary if available, show '?' if not found
-                id_translation = dict_lookup(lemma)
-                gloss = id_translation if id_translation else '?'
+                # Use Indonesian dictionary + CAMeL English gloss
+                gloss_id = dict_lookup(lemma) or '?'
+                gloss_en = a.get('gloss', '') or ''
                 pos_arabic = _map_pos(pos_tag)
             else:
                 word_form = harakat_words[idx] if idx < len(harakat_words) else words[idx]
@@ -256,7 +257,8 @@ def analyze_words(text: str) -> AnalyzeResponse:
             root = '—'
             pos_tag = 'unknown'
             pos_arabic = '—'
-            gloss = ''
+            gloss_id = ''
+            gloss_en = ''
 
         word_list.append(WordAnalysis(
             word=word_form,
@@ -264,7 +266,8 @@ def analyze_words(text: str) -> AnalyzeResponse:
             root=root,
             pos_type=pos_tag,
             pos_arabic=pos_arabic,
-            gloss=gloss,
+            gloss_id=gloss_id,
+            gloss_en=gloss_en,
         ))
 
     return AnalyzeResponse(

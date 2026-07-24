@@ -140,10 +140,15 @@
                   {{ word.pos_arabic }}
                 </span>
 
-                <!-- Gloss -->
-                <p v-if="word.gloss" class="text-xs text-gray-500 italic mt-2">
-                  {{ word.gloss }}
-                </p>
+                <!-- Translations: ID + EN -->
+                <div class="mt-2 space-y-1">
+                  <p v-if="word.gloss_id" class="text-xs font-medium text-emerald-600">
+                    {{ word.gloss_id }}
+                  </p>
+                  <p v-if="word.gloss_en" class="text-xs text-gray-400 italic">
+                    {{ word.gloss_en }}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -183,7 +188,10 @@
                         {{ word.pos_arabic }}
                       </span>
                     </td>
-                    <td class="p-3 text-gray-600 italic">{{ word.gloss || '—' }}</td>
+                    <td class="p-3">
+                      <div class="text-emerald-700 text-xs font-medium">{{ word.gloss_id || '—' }}</div>
+                      <div v-if="word.gloss_en" class="text-gray-400 text-xs italic">{{ word.gloss_en }}</div>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -206,7 +214,8 @@ interface WordAnalysis {
   root: string
   pos_type: string
   pos_arabic: string
-  gloss: string
+  gloss_id: string
+  gloss_en: string
 }
 
 interface AnalyzeResponse {
