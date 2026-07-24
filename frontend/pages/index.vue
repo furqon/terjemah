@@ -244,9 +244,11 @@ interface AnalyzeResponse {
 const inputText = ref('')
 const result = ref<AnalyzeResponse | null>(null)
 const loading = ref(false)
-const error = ref<string | null>(null)  const config = useRuntimeConfig()
+const error = ref<string | null>(null)
 const translating = ref(false)
 const translation = ref<string | null>(null)
+
+const config = useRuntimeConfig()
 
 const posColors: Record<string, string> = {
   noun: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
