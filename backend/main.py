@@ -278,32 +278,24 @@ def analyze_words(text: str) -> AnalyzeResponse:
     )
 
 
-# ── NLLB-200 Translation ───────────────────────────────────────────
-# Lazy-loaded: model downloads (~1.2GB) on first /api/translate request.
+# ── Translation ────────────────────────────────────────────────────
+# Uses deep-translator (free Google Translate API) — instant, no model download.
 
-_nllb_lock = threading.Lock()
-_nllb_tokenizer = None
-_nllb_model = None
+_translator_lock = threading.Lock()
+_translator = None
 
 
-def _load_nllb():
-    """Load NLLB-200 distilled 600M model (lazy, on first use).
-
-    First call downloads ~1.2GB from HuggingFace Hub.
-    Subsequent calls use cached model.
-    """
-    global _nllb_tokenizer, _nllb_model
-    with _nllb_lock:
-        if _nllb_model is not None:
-            return
-        try:
-            from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-            model_name = "facebook/nllb-200-distilled-600M"
-            _nllb_tokenizer = AutoTokenizer.from_pretrained(model_name)
-            _nllb_tokenizer.src_lang = "arb_Arab"  # Source: Arabic
-            _nllb_model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-        except Exception as e:
-            raise RuntimeError(f"Failed to load NLLB model: {e}")
+def _get_translator():
+    """Get or create the Google Translate translator (thread-safe)."""
+    global _translator
+    if _translator is not None:
+        return _translator
+    with _translator_lock:
+        if _translator is not None:
+            return _translator
+        from deep_translator import GoogleTranslator
+        _translator = GoogleTranslator(source='ar', target='id')
+        return _translator
 
 
 class TranslateRequest(BaseModel):
@@ -313,7 +305,7 @@ class TranslateRequest(BaseModel):
 class TranslateResponse(BaseModel):
     source: str
     translation: str
-    model: str = "nllb-200-distilled-600M"
+    engine: str = "google-translate"
 
 
 # ── API endpoints ───────────────────────────────────────────────────
@@ -338,21 +330,16 @@ def analyze(request: AnalyzeRequest):
 
 @app.post("/api/translate", response_model=TranslateResponse)
 def translate(request: TranslateRequest):
-    """Translate Arabic to Indonesian using NLLB-200.
+    """Translate Arabic to Indonesian using Google Translate (free).
 
-    First call downloads model (~1.2GB); subsequent calls are fast.
+    Uses deep-translator library — no model download needed.
+    Requires internet connection. Free with reasonable rate limits.
     """
     if not request.text.strip():
         return TranslateResponse(source=request.text, translation="")
     try:
-        _load_nllb()
-        inputs = _nllb_tokenizer(request.text, return_tensors="pt", truncation=True, max_length=512)
-        translated_tokens = _nllb_model.generate(
-            **inputs,
-            forced_bos_token_id=_nllb_tokenizer.convert_tokens_to_ids("ind_Latn"),
-            max_length=512,
-        )
-        result = _nllb_tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)[0]
+        translator = _get_translator()
+        result = translator.translate(request.text)
         return TranslateResponse(source=request.text, translation=result)
     except Exception as e:
         from fastapi import HTTPException
