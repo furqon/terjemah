@@ -228,8 +228,12 @@
                       <p class="text-[10px] tracking-wider mb-1" style="color: #8b7355;">TEKS ARAB</p>
                       <p class="text-base font-arabic leading-relaxed" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ getPageText(page) }}</p>
                     </div>
-                    <div class="flex justify-end gap-1.5">
+                    <div class="flex justify-end gap-1.5 flex-wrap">
                       <button @click="toggleEdit(page.id, true)" class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all flex items-center gap-1" style="background: #e0d5c0; color: #3a2a1a;">✎ Edit</button>
+                      <button @click="tashkeelPageText(page)" :disabled="tashkeelingPageIds[page.id]"
+                        class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all disabled:opacity-50 flex items-center gap-1"
+                        style="background: #6b21a8; color: white;"
+                      ><span v-if="tashkeelingPageIds[page.id]"><svg class="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg></span><span v-else>{{ '◌' }} Tashkeel</span></button>
                       <button @click="translatePage(page.id, page.page_number, getEditedText(page))" :disabled="translatingPageId === page.id"
                         class="text-[10px] px-2.5 py-1.5 rounded font-medium transition-all disabled:opacity-50 flex items-center gap-1"
                         style="background: #c9a84c; color: white;"
