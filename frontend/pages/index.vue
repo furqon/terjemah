@@ -375,7 +375,21 @@ async function checkTesseract() {
   try { const res = await fetch(`${config.public.apiBase}/api/ocr/health`); const d = await res.json(); tesseractOk.value = d.tesseract_installed; tesseractVersion.value = d.tesseract_version } catch { tesseractOk.value = false }
 }
 async function loadPdfList() { try { const res = await fetch(`${config.public.apiBase}/api/ocr/pdfs`); if (res.ok) pdfList.value = await res.json() } catch { /* ignore */ } }
-async function loadPages(pdfId: number) { try { const res = await fetch(`${config.public.apiBase}/api/ocr/pages/${pdfId}`); if (res.ok) { const d = await res.json(); pagesCache.value[pdfId] = d.pages } } catch { /* ignore */ } }
+async function loadPages(pdfId: number) {
+  try {
+    const res = await fetch(`${config.public.apiBase}/api/ocr/pages/${pdfId}`);
+    if (res.ok) {
+      const d = await res.json();
+      pagesCache.value[pdfId] = d.pages
+      // Auto-expand pages that have saved content (processed/translated)
+      for (const p of d.pages) {
+        if (p.cleaned_text || p.raw_text) {
+          expandedPages.value[p.id] = true
+        }
+      }
+    }
+  } catch { /* ignore */ }
+}
 function getPages(pdfId: number): OCRPage[] { return pagesCache.value[pdfId] || [] }
 
 /* ── Edit functions ── */
@@ -453,7 +467,12 @@ async function uploadAndProcess() {
   finally { ocrProcessing.value = false }
 }
 
-onMounted(() => { checkTesseract(); loadPdfList() })
+onMounted(async () => {
+  await checkTesseract()
+  await loadPdfList()
+  // Load pages for all existing PDFs so saved OCR results appear expanded
+  await Promise.all(pdfList.value.map(pdf => loadPages(pdf.id)))
+})
 </script>
 
 <style>
