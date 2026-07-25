@@ -107,6 +107,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# Preload NLLB-200 model on startup (non-blocking background thread)
+# so the first translation request doesn't time out while downloading ~1.2 GB.
+@app.on_event("startup")
+async def _preload_nllb():
+    import threading as _th
+    _th.Thread(target=_background_load_nllb, daemon=True).start()
+
+
+def _background_load_nllb():
+    """Download & cache the NLLB-200 model in the background."""
+    import logging as _log
+    _log.info("Background: pre-loading NLLB-200 model...")
+    try:
+        from nllb_translator import NLLBTranslator
+        NLLBTranslator().is_available  # triggers download
+        _log.info("Background: NLLB-200 model loaded.")
+    except Exception as exc:
+        _log.warning("Background: NLLB-200 preload failed: %s", exc)
+
 # Thread-safe singleton: each thread gets its own MLEDisambiguator instance
 # because it loads large model data that may not be thread-safe.
 _thread_local = threading.local()
@@ -312,6 +332,63 @@ def _get_translators():
         return _translator, _translator_en
 
 
+def _translate_safe(google_translator, text: str) -> str | None:
+    """Try Google Translate for a single text, returning None on failure."""
+    try:
+        result = google_translator.translate(text) or ""
+        return result if result else None
+    except Exception:
+        return None
+
+
+def _translate_id_fallback(text: str) -> tuple[str, str]:
+    """Translate Arabic → Indonesian. Google first, then NLLB-200.
+
+    Returns:
+        (translated_text, engine_name)
+    """
+    if not text.strip():
+        return "", "none"
+
+    # Try Google first
+    trans_id, _ = _get_translators()
+    result = _translate_safe(trans_id, text)
+    if result is not None:
+        return result, "google-translate"
+
+    # Fallback to NLLB-200 offline
+    try:
+        from nllb_translator import NLLBTranslator
+        nllb = NLLBTranslator()
+        return nllb.translate(text, target="id"), "nllb-200"
+    except Exception as e:
+        return f"[Translation unavailable: {e}]", "error"
+
+
+def _translate_en_fallback(text: str) -> tuple[str, str]:
+    """Translate Arabic → English. Google first, then NLLB-200.
+
+    Returns:
+        (translated_text, engine_name)
+    """
+    if not text.strip():
+        return "", "none"
+
+    # Try Google first
+    _, trans_en = _get_translators()
+    result = _translate_safe(trans_en, text)
+    if result is not None:
+        return result, "google-translate"
+
+    # Fallback to NLLB-200 offline
+    try:
+        from nllb_translator import NLLBTranslator
+        nllb = NLLBTranslator()
+        return nllb.translate(text, target="en"), "nllb-200"
+    except Exception as e:
+        return f"[Translation unavailable: {e}]", "error"
+
+
 class TranslateRequest(BaseModel):
     text: str
 
@@ -428,23 +505,23 @@ def analyze(request: AnalyzeRequest):
 def translate(request: TranslateRequest):
     """Translate Arabic to Indonesian using Google Translate (free).
 
-    Uses deep-translator library — no model download needed.
-    Requires internet connection. Free with reasonable rate limits.
+    Falls back to NLLB-200 offline model when Google is unavailable.
     """
     if not request.text.strip():
         return TranslateResponse(source=request.text, translation_id="", translation_en="")
-    try:
-        trans_id, trans_en = _get_translators()
-        result_id = trans_id.translate(request.text) or ''
-        # Small delay to avoid rate limiting on rapid sequential calls
-        time.sleep(0.3)
-        try:
-            result_en = trans_en.translate(request.text) or ''
-        except Exception:
-            result_en = ''
-        return TranslateResponse(source=request.text, translation_id=result_id, translation_en=result_en)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    result_id, engine_id = _translate_id_fallback(request.text)
+    # Small delay to avoid rate limiting before English call
+    time.sleep(0.3)
+    result_en, engine_en = _translate_en_fallback(request.text)
+
+    engine = f"{engine_id}+{engine_en}" if engine_id != engine_en else engine_id
+    return TranslateResponse(
+        source=request.text,
+        translation_id=result_id,
+        translation_en=result_en,
+        engine=engine,
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -557,7 +634,6 @@ def ocr_translate(request: OCRTranslateRequest):
     if not pages:
         return OCRTranslateResponse(pdf_id=request.pdf_id, translated=0, results=[])
 
-    trans_id, trans_en = _get_translators()
     results: list[OCRTranslatePage] = []
 
     for page in pages:
@@ -565,15 +641,9 @@ def ocr_translate(request: OCRTranslateRequest):
         if not text.strip():
             continue
 
-        try:
-            tid = trans_id.translate(text) or ""
-        except Exception as e:
-            tid = f"[Translation error: {e}]"
-
-        try:
-            ten = trans_en.translate(text) or ""
-        except Exception:
-            ten = ""
+        tid, _engine_id = _translate_id_fallback(text)
+        time.sleep(0.3)
+        ten, _engine_en = _translate_en_fallback(text)
 
         ocr_db.save_translation(page["id"], tid, ten)
         results.append(OCRTranslatePage(
@@ -612,17 +682,8 @@ def ocr_translate_page(request: OCRTranslatePageRequest):
             translation_en="",
         )
 
-    trans_id, trans_en = _get_translators()
-
-    try:
-        tid = trans_id.translate(request.text) or ""
-    except Exception as e:
-        tid = f"[Translation error: {e}]"
-
-    try:
-        ten = trans_en.translate(request.text) or ""
-    except Exception:
-        ten = ""
+    tid, _engine_id = _translate_id_fallback(request.text)
+    ten, _engine_en = _translate_en_fallback(request.text)
 
     # Save both the corrected text and the translation
     ocr_db.save_page(
