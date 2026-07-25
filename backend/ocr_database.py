@@ -135,12 +135,21 @@ class OCRDatabase:
         cleaned_text: str,
         confidence: float,
     ) -> None:
-        """Insert or replace a page record."""
+        """Insert or update a page record.
+
+        Uses INSERT ... ON CONFLICT DO UPDATE instead of INSERT OR REPLACE
+        so that existing columns (translated_id, translated_en, id) are
+        preserved rather than wiped out.
+        """
         with self._conn() as conn:
             conn.execute(
-                """INSERT OR REPLACE INTO pages
-                   (pdf_id, page_number, raw_text, cleaned_text, confidence)
-                   VALUES (?, ?, ?, ?, ?)""",
+                """INSERT INTO pages (pdf_id, page_number, raw_text, cleaned_text, confidence)
+                   VALUES (?, ?, ?, ?, ?)
+                   ON CONFLICT(pdf_id, page_number) DO UPDATE SET
+                       raw_text = excluded.raw_text,
+                       cleaned_text = excluded.cleaned_text,
+                       confidence = excluded.confidence,
+                       processed_at = CURRENT_TIMESTAMP""",
                 (pdf_id, page_number, raw_text, cleaned_text, confidence),
             )
 
