@@ -60,7 +60,7 @@ class NLLBTranslator:
         """Load the model and tokenizer from Hugging Face Hub (once)."""
         if self._loaded:
             return
-        with self._model_lock:
+        with self._load_lock:
             if self._loaded:
                 return
             from transformers import AutoModelForSeq2SeqLM, AutoTokenizer

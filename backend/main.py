@@ -410,6 +410,7 @@ ocr_db = OCRDatabase()
 class OCRHealthResponse(BaseModel):
     tesseract_installed: bool
     tesseract_version: str
+    nllb_available: bool = False
 
 
 class OCRUploadResponse(BaseModel):
@@ -531,9 +532,11 @@ def translate(request: TranslateRequest):
 @app.get("/api/ocr/health", response_model=OCRHealthResponse)
 def ocr_health():
     """Check Tesseract OCR availability."""
+    from nllb_translator import NLLBTranslator
     return OCRHealthResponse(
         tesseract_installed=is_tesseract_available(),
         tesseract_version=tesseract_version(),
+        nllb_available=NLLBTranslator().is_available,
     )
 
 
