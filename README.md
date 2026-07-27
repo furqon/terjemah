@@ -1,6 +1,6 @@
 # ﷽ Penerjemah Kitab
 
-**Arabic → Indonesian translation tool** with **word-by-word analysis**, **Tashkeel (diacritization)**, and **PDF OCR** — designed for reading classical Islamic texts (kitab kuning) like a scholar.
+**Arabic → Indonesian translation tool** with **word-by-word analysis**, **Tashkeel (diacritization)**, **PDF OCR**, and **Sarf morphology (full verb conjugation)** — designed for reading classical Islamic texts (kitab kuning) like a scholar.
 
 > "Penerjemah Kitab" means "Kitab Translator" — an app that helps students read Arabic texts the way a traditional *kyai* (scholar) explains a kitab to their students: word by word, with grammatical analysis and translation.
 
@@ -15,6 +15,7 @@
 | **Word Analysis** | Each word analyzed for: **lemma**, **root**, **POS type** (20+ categories: Isim, Fi'il, Harf, Dhomir, etc.) |
 | **Word Gloss** | Word-by-word translation in **Indonesian** and **English** via built-in dictionaries (300+ entries each) |
 | **Full Translation** | Sentence-level translation to **Indonesian + English** via Google Translate (free), with **NLLB-200 fallback** |
+| **🔬 Sarf Morphology** | Click the 🔬 button on any word root to see **full verb conjugation tables** — past tense, present tense, subjunctive, jussive, and masdars (gerunds) — powered by the **[alsaydi/sarf](https://github.com/alsaydi/sarf)** library |
 | **Scholar Display** | Kitab-style layout with interlinear gloss, POS badges, and expandable detail table |
 
 ### 📄 Scan PDF (OCR)
@@ -56,6 +57,7 @@
 │  │  menulis   siswa       pelajaran  di          │   │
 │  │   فعل       إسم         إسم       حرف جر      │   │
 │  │  (كتب)    (طالب)      (درس)     (في)         │   │
+│  │   🔬───► Full conjugation table               │   │
 │  │                                              │   │
 │  │  Terjemahan: "Siswa menulis pelajaran di..."  │   │
 │  └──────────────────────────────────────────────┘   │
@@ -65,22 +67,32 @@
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                  Your Machine (localhost)             │
-│                                                      │
-│  ┌────────────────────┐    ┌──────────────────────┐ │
-│  │   Frontend (PWA)   │    │   Backend API         │ │
-│  │                    │    │                        │ │
-│  │   Nuxt 3 + Vue 3  │◄──►│   Python FastAPI       │ │
-│  │   + Tailwind CSS  │    │   Port: 8000            │ │
-│  │   Port: 3000      │    │                        │ │
-│  │                    │    │   - CAMeL Tools        │ │
-│  │   - PWA ready     │    │   - Google Translate    │ │
-│  │   - Installable   │    │   - NLLB-200 (fallback) │ │
-│  │   - Responsive    │    │   - Tesseract OCR       │ │
-│  └────────────────────┘    │   - SQLite database    │ │
-│                             └──────────────────────┘ │
-└─────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────┐
+│                    Your Machine (localhost)                  │
+│                                                             │
+│  ┌────────────────────┐    ┌────────────────────────────┐  │
+│  │   Frontend (PWA)   │    │   Backend API               │  │
+│  │                    │    │                              │  │
+│  │   Nuxt 3 + Vue 3  │◄──►│   Python FastAPI             │  │
+│  │   + Tailwind CSS  │    │   Port: 8000                  │  │
+│  │   Port: 3000      │    │                              │  │
+│  │                    │    │   - CAMeL Tools              │  │
+│  │   - PWA ready     │    │   - Google Translate          │  │
+│  │   - Installable   │    │   - NLLB-200 (fallback)       │  │
+│  │   - Responsive    │    │   - Tesseract OCR             │  │
+│  └────────────────────┘    │   - SQLite database          │  │
+│                             │   - Sarf (Java via JAR) ◄───┼──┐
+│                             └────────────────────────────┘  │
+│                                                             │
+│  ┌────────────────────────────────────────────────────┐     │
+│  │  Sarf Morphology Engine (Java 17+)                  │     │
+│  │  ┌──────────┐  ┌──────────────┐  ┌──────────────┐ │     │
+│  │  │ XML Root │  │ Conjugation  │  │ CLI Wrapper  │ │     │
+│  │  │ Database │─►│ Engine       │─►│ (SarfCLI.java)│─►───┘
+│  │  │ 24K+ roots│  │ 30 bab types│  │ stdin → JSON │ │     │
+│  │  └──────────┘  └──────────────┘  └──────────────┘ │     │
+│  └────────────────────────────────────────────────────┘     │
+└───────────────────────────────────────────────────────────┘
 ```
 
 ## 📦 Tech Stack
@@ -94,6 +106,13 @@
 - **Tesseract OCR** + **PyMuPDF** + **OpenCV** — PDF→Arabic text pipeline
 - **SQLite** — Persistent storage for OCR results
 
+### Sarf Morphology (Java)
+- **[alsaydi/sarf](https://github.com/alsaydi/sarf)** — Arabic verb conjugation & noun derivation engine
+- **24,000+ triliteral roots** with conjugation class (bab) classification
+- **30 verb types** (صحيح سالم, مهموز, أجوف, ناقص, لفيف, etc.)
+- **Full paradigm generation**: past, present, subjunctive, jussive, imperative + masdars
+- **Packaged as a CLI JAR** (`backend/sarf-cli.jar`) called from Python via subprocess
+
 ### Frontend (TypeScript)
 - **Nuxt 3** + **Vue 3** — Modern web framework
 - **Tailwind CSS** — Utility-first styling
@@ -104,8 +123,18 @@
 
 - **Python 3.10+**
 - **Node.js 18+** and **npm**
+- **Java 17+** (JRE) — required for the **Sarf morphology** feature ([download Eclipse Temurin](https://adoptium.net/temurin/releases/?version=17))
 - **Tesseract OCR 5.x** (for PDF Scan feature only — [download](https://github.com/UB-Mannheim/tesseract/wiki))
   - Ensure **Arabic language data** is installed during setup
+
+### Optional: Build Sarf from Source
+The pre-built `backend/sarf-cli.jar` is included, but if you want to rebuild it:
+
+```bash
+cd sarf-source
+# Requires: Java 17+ JDK and Maven
+mvn compile -pl sarf-library
+```
 
 ## 🚀 Quick Start
 
@@ -144,6 +173,8 @@ npm run dev
 
 Paste Arabic text → click **☾ Analisis Teks** → see word-by-word analysis with translation!
 
+Click **🔬** on any word root in the "Detail Lengkap" table to see full Sarf conjugation tables.
+
 For OCR: Switch to **📄 Scan PDF** tab → upload PDF → select page range → click **☾ Proses OCR**
 
 ## 📂 Project Structure
@@ -157,6 +188,8 @@ camel/
 │   ├── nllb_translator.py    # NLLB-200 offline translator (fallback)
 │   ├── ocr_engine.py         # PDF→image→OCR pipeline
 │   ├── ocr_database.py       # SQLite database layer
+│   ├── sarf_client.py        # Python wrapper for Sarf Java CLI
+│   ├── sarf-cli.jar           # Pre-built Sarf morphology engine (Java 17+)
 │   └── uploads/              # Uploaded PDF storage
 ├── frontend/
 │   ├── pages/index.vue       # Main application page
@@ -167,12 +200,21 @@ camel/
 │   ├── public/
 │   │   └── icons/            # PWA icons
 │   └── assets/css/main.css   # Tailwind entry CSS
+├── sarf-source/
+│   └── sarf-library/         # Sarf Java source (alsaydi/sarf)
+│       ├── pom.xml
+│       ├── src/main/java/sarf/
+│       │   ├── SarfCLI.java          # CLI wrapper (stdin → JSON)
+│       │   ├── util/FileUtil.java    # Fixed classloader for JAR loading
+│       │   └── ... (50+ morphology classes)
+│       └── src/main/resources/db/    # XML root databases (24K+ roots)
 ├── docs/
 │   ├── ASSESSMENT.md         # Original tech assessment
 │   ├── DEV_BREAKDOWN.md      # Development plan
 │   ├── HOW_TERJEMAH_WORKS.md # Translation engine docs
 │   ├── PDF_OCR_ASSESSMENT.md # OCR feature assessment
 │   ├── OPUS_ASSESSMENT.md    # OPUS-MT translation assessment
+│   ├── SARF_ASSESSMENT.md    # Sarf integration assessment
 │   └── TRANSLATION_RECOMMENDATION.md  # Translation strategy
 ├── start.bat                # Windows launcher script
 ├── restart_servers.bat       # Windows restart script
@@ -181,12 +223,22 @@ camel/
 
 ## 🔌 API Endpoints
 
+### Core Analysis
 | Endpoint | Method | Description |
 |---|---|---|
 | `/api/health` | GET | Server health check |
 | `/api/tashkeel` | POST | Add diacritics to Arabic text |
 | `/api/analyze` | POST | Word-by-word analysis (lemma, root, POS, gloss) |
 | `/api/translate` | POST | Full sentence translation (ID + EN) |
+
+### Sarf Morphology
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/sarf/analyze` | POST | Analyze triliteral root: full conjugation tables (past, present, subjunctive, jussive) + masdars |
+
+### PDF OCR
+| Endpoint | Method | Description |
+|---|---|---|
 | `/api/ocr/health` | GET | Tesseract & NLLB availability check |
 | `/api/ocr/upload` | POST | Upload PDF file |
 | `/api/ocr/process` | POST | Run OCR on page range |
@@ -198,6 +250,39 @@ camel/
 | `/api/ocr/save-page` | POST | Save edited OCR text |
 | `/api/ocr/delete/{pdf_id}` | POST | Soft-delete a PDF |
 | `/api/ocr/stats` | GET | OCR processing statistics |
+
+### Sarf Analyze Example
+
+```bash
+curl -X POST http://localhost:8000/api/sarf/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"root": "كتب", "bab": 1}'
+```
+
+Returns:
+```json
+{
+  "root": "كتب",
+  "bab": 1,
+  "classification": "فعل ثلاثي مجرد — فَعَلَ يَفْعَلُ (Bab 1: فتح يفتح)",
+  "past_tense": [
+    {"pronoun": "أنا", "text": "كَتَبْتُ"},
+    {"pronoun": "نحن", "text": "كَتَبْنَا"},
+    {"pronoun": "هو", "text": "كَتَبَ"},
+    {"pronoun": "هي", "text": "كَتَبَت"},
+    ...
+  ],
+  "present_tense": [
+    {"pronoun": "أنا", "text": "أَكْتُبُ"},
+    {"pronoun": "نحن", "text": "نَكْتُبُ"},
+    {"pronoun": "هو", "text": "يَكْتُبُ"},
+    ...
+  ],
+  "present_subjunctive": [...],
+  "present_jussive": [...],
+  "masdars": ["كِتَابًا", "كُتُبًا", ...]
+}
+```
 
 ## ⚙️ Configuration
 
@@ -213,19 +298,38 @@ NUXT_PUBLIC_API_BASE=http://localhost:8000 npm run dev
 
 See `.env.example` for configuration template.
 
+### Sarf (Java)
+The Sarf engine auto-detects Java 17+:
+1. Checks project-local JDK at `tools/jdk17_extracted/` (if you've extracted one)
+2. Falls back to `java` on `PATH`
+3. Falls back to common Windows JDK paths
+
+To verify it's working, check the Sarf button in the UI or call `/api/sarf/analyze` directly.
+
 ## 📚 How It Works
 
 See detailed documentation in the `docs/` folder:
 - **[HOW_TERJEMAH_WORKS.md](docs/HOW_TERJEMAH_WORKS.md)** — Translation engine internals
 - **[PDF_OCR_ASSESSMENT.md](docs/PDF_OCR_ASSESSMENT.md)** — OCR pipeline architecture
 - **[TRANSLATION_RECOMMENDATION.md](docs/TRANSLATION_RECOMMENDATION.md)** — Translation strategy
+- **[SARF_ASSESSMENT.md](docs/SARF_ASSESSMENT.md)** — Sarf morphology integration assessment
+
+### How Sarf Analysis Works
+
+1. User types Arabic text (e.g., "يكتب الطالب الدرس")
+2. CAMeL Tools analyzes each word — extracts **root** for verbs (e.g., "كتب" from "يكتب")
+3. User clicks **🔬** next to a root in the "Detail Lengkap" table
+4. Frontend calls `POST /api/sarf/analyze` with the root
+5. Backend's `sarf_client.py` spawns a Java subprocess running `sarf-cli.jar`
+6. The Sarf engine loads the XML root database, applies conjugation rules, and returns full JSON
+7. Frontend displays the conjugation tables in a modal dialog
 
 ## 🎓 Use Cases
 
-1. **Students** reading kitab kuning — see every word's meaning and grammar
-2. **Teachers** preparing lesson materials — get harakat + translation quickly
-3. **Researchers** working with Arabic manuscripts — OCR + translate scanned pages
-4. **Self-learners** studying Arabic — understand sentence structure word by word
+1. **Students** reading kitab kuning — see every word's meaning and grammar, plus full verb conjugation
+2. **Teachers** preparing lesson materials — get harakat + translation + root analysis quickly
+3. **Researchers** working with Arabic manuscripts — OCR + translate scanned pages + analyze verb morphology
+4. **Self-learners** studying Arabic — understand sentence structure word by word, explore verb patterns
 
 ## 🧪 Development Roadmap
 
@@ -241,6 +345,7 @@ See detailed documentation in the `docs/` folder:
 | 8 | PDF OCR (Tesseract + PyMuPDF + SQLite) | ✅ Complete |
 | 9 | PWA (installable, offline manifest) | ✅ Complete |
 | 10 | Polish, error handling, batch operations | ✅ Complete |
+| **11** | **🔬 Sarf Morphology (verb conjugation)** | **✅ Complete** |
 
 ## 🤝 Contributing
 
@@ -250,6 +355,10 @@ Add vocabulary to the dictionaries:
 
 Add phrase overrides for better diacritization in `backend/main.py` (`PHRASE_OVERRIDES` dict).
 
+Improve Sarf integration:
+- Modify [`backend/sarf_client.py`](backend/sarf_client.py) to tweak Java invocation or add new conjugation types
+- Modify [`sarf-source/sarf-library/src/main/java/sarf/SarfCLI.java`](sarf-source/sarf-library/src/main/java/sarf/SarfCLI.java) to add new output fields
+
 ## 📜 License
 
 This project uses the following open-source libraries:
@@ -257,6 +366,7 @@ This project uses the following open-source libraries:
 - **PyArabic** — Arabic text utilities (MIT License)
 - **NLLB-200** — Translation model (CC-BY-NC 4.0)
 - **Tesseract OCR** — Optical character recognition (Apache 2.0)
+- **[alsaydi/sarf](https://github.com/alsaydi/sarf)** — Arabic morphology engine (Apache 2.0)
 
 ---
 
