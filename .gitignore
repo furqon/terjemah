@@ -39,3 +39,6 @@ backend/*.pyc
 backend/ocr_texts.db
 backend/uploads/
 nul
+
+# Local JDK / Maven (not for distribution)
+tools/

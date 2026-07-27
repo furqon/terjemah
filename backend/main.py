@@ -15,6 +15,7 @@ from dictionary import lookup as dict_lookup
 from dictionary_en import lookup as dict_lookup_en
 from ocr_engine import OCREngine, is_tesseract_available, tesseract_version
 from ocr_database import OCRDatabase
+from sarf_client import SarfClient
 
 # ── Upload directory for PDFs ──
 UPLOAD_DIR = Path(__file__).parent / "uploads"
@@ -400,6 +401,33 @@ class TranslateResponse(BaseModel):
     engine: str = "google-translate"
 
 
+# ── Sarf morphology client ───────────────────────────────────────────
+sarf_client = SarfClient()
+
+
+# ── Pydantic models for Sarf ─────────────────────────────────────────
+
+class SarfAnalyzeRequest(BaseModel):
+    root: str  # 3 Arabic letters
+    bab: int = 1  # Conjugation class 1-6
+
+
+class SarfConjugationRow(BaseModel):
+    pronoun: str
+    text: str
+
+
+class SarfAnalyzeResponse(BaseModel):
+    root: str
+    bab: int
+    classification: str
+    past_tense: list[SarfConjugationRow]
+    present_tense: list[SarfConjugationRow]
+    present_subjunctive: list[SarfConjugationRow]
+    present_jussive: list[SarfConjugationRow]
+    masdars: list[str]
+
+
 # ── OCR engine & database singletons ────────────────────────────────
 ocr_engine = OCREngine(dpi=300)
 ocr_db = OCRDatabase()
@@ -544,6 +572,44 @@ def translate(request: TranslateRequest):
         translation_en=result_en,
         engine=engine,
     )
+
+
+# ── Sarf (Arabic morphology) endpoint ───────────────────────────────────
+
+@app.post("/api/sarf/analyze", response_model=SarfAnalyzeResponse)
+def sarf_analyze(request: SarfAnalyzeRequest):
+    """Analyze a triliteral Arabic root using the Sarf morphology engine.
+
+    Returns full conjugation tables (past, present, imperative), derived
+    nouns, and gerunds for the given root.
+    """
+    if not sarf_client.is_available():
+        raise HTTPException(
+            status_code=503,
+            detail="Sarf morphology engine not available. Ensure Java 17+ is installed and sarf-source is compiled."
+        )
+
+    if len(request.root) != 3:
+        raise HTTPException(status_code=400, detail="Root must be exactly 3 Arabic letters")
+
+    try:
+        raw = sarf_client.analyze(request.root, request.bab)
+
+        def _dict_to_rows(data: dict) -> list[SarfConjugationRow]:
+            return [SarfConjugationRow(pronoun=k, text=v) for k, v in data.items()]
+
+        return SarfAnalyzeResponse(
+            root=raw.get("root", request.root),
+            bab=raw.get("bab", request.bab),
+            classification=raw.get("classification", ""),
+            past_tense=_dict_to_rows(raw.get("pastTense", {})),
+            present_tense=_dict_to_rows(raw.get("presentTense", {})),
+            present_subjunctive=_dict_to_rows(raw.get("presentSubjunctive", {})),
+            present_jussive=_dict_to_rows(raw.get("presentJussive", {})),
+            masdars=raw.get("masdars", []),
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ═══════════════════════════════════════════════════════════════════════

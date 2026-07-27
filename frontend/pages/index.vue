@@ -131,7 +131,18 @@
                       <td class="p-2" style="color: #a0896a;">{{ i + 1 }}</td>
                       <td class="p-2 font-arabic text-right text-sm" dir="rtl" style="color: #3a2a1a;">{{ word.word }}</td>
                       <td class="p-2 font-medium" style="color: #5a7a4a;">{{ word.lemma }}</td>
-                      <td class="p-2" style="color: #a0896a;">{{ word.root !== '—' ? word.root : '—' }}</td>
+                      <td class="p-2" style="color: #a0896a;">
+                        <span v-if="word.root && word.root !== '—'" class="flex items-center gap-1">
+                          <span style="font-family: 'Traditional Arabic', serif;">{{ word.root }}</span>
+                          <button @click="analyzeRoot(word.root)" :disabled="sarfLoading"
+                            class="text-xs cursor-pointer transition-all duration-200 hover:scale-110"
+                            style="opacity: 0.6; filter: drop-shadow(0 0 0 transparent);"
+                            @mouseenter="$event.target.style.opacity = '1'"
+                            @mouseleave="$event.target.style.opacity = '0.6'"
+                            :title="'Analisis morfologi: ' + word.root">🔬</button>
+                        </span>
+                        <span v-else>—</span>
+                      </td>
                       <td class="p-2"><span class="px-1.5 py-0.5 rounded-sm text-[10px] font-bold" :class="posBadgeClass(word.pos_type)">{{ word.pos_arabic }}</span></td>
                       <td class="p-2" style="color: #3a7a4d;">{{ word.gloss_id || '—' }}</td>
                       <td class="p-2" style="color: #5a7a8a;">{{ word.gloss_en || '—' }}</td>
@@ -319,6 +330,110 @@
           <p class="text-xs mt-1" style="color: #a0896a;">Upload PDF untuk memulai OCR dan terjemahan</p>
         </div>
       </div>
+      <!-- ── Sarf Modal ── -->
+      <Teleport to="body">
+        <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0" leave-active-class="transition duration-200 ease-in" leave-to-class="opacity-0">
+          <div v-if="sarfLoading || sarfResult || sarfError" class="fixed inset-0 z-50 flex items-start justify-center pt-16 pb-8 overflow-y-auto" style="background: rgba(0,0,0,0.5);" @click.self="closeSarfModal">
+            <div class="w-full max-w-2xl mx-4 rounded-lg overflow-hidden" style="background: #fffdf5; border: 1px solid #d4c5a9; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+              <!-- Header -->
+              <div class="flex items-center justify-between px-4 py-3" style="background: linear-gradient(135deg, #1a3a2a, #2d5a3d);">
+                <div class="flex items-center gap-2">
+                  <span style="font-size: 16px; color: #c9a84c;">🔬</span>
+                  <span class="text-sm font-bold tracking-wider" style="color: #f5f0e8;">Analisis Morfologi Sarf</span>
+                </div>
+                <button @click="closeSarfModal" class="text-sm transition-colors" style="color: #a0896a;" @mouseenter="$event.target.style.color = '#c9a84c'" @mouseleave="$event.target.style.color = '#a0896a'">✕</button>
+              </div>
+
+              <!-- Loading -->
+              <div v-if="sarfLoading" class="p-8 text-center">
+                <div class="inline-block animate-spin h-8 w-8 mb-3" style="border: 3px solid #e0d5c0; border-top-color: #c9a84c; border-radius: 50%;"></div>
+                <p class="text-sm italic" style="color: #a0896a;">Menganalisis akar kata {{ sarfRoot }}...</p>
+              </div>
+
+              <!-- Error -->
+              <div v-if="sarfError" class="p-6">
+                <div class="px-4 py-3 rounded-lg" style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;">
+                  <p class="text-sm font-medium">Sarf Tidak Tersedia</p>
+                  <p class="text-xs mt-1">{{ sarfError }}</p>
+                  <p class="text-xs mt-2" style="color: #7f1d1d;">Pastikan Java 17+ terinstal dan kompilasi sarf-source telah berhasil.</p>
+                </div>
+              </div>
+
+              <!-- Result -->
+              <div v-if="sarfResult" class="p-4 space-y-4">
+                <!-- Root info -->
+                <div class="text-center">
+                  <span class="inline-block px-4 py-1.5 rounded-lg text-lg font-arabic" style="background: #f0eadc; color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif; border: 1px solid #d4c5a9;">{{ sarfResult.root }}</span>
+                  <p class="text-[11px] mt-1.5 tracking-wider" style="color: #8b7355;">{{ sarfResult.classification }}</p>
+                </div>
+
+                <!-- Conjugation tables -->
+                <div v-if="sarfResult.past_tense.length > 0">
+                  <p class="text-xs font-bold tracking-wider mb-2" style="color: #8b7355;">ي الفعل الماضي (Past Tense)</p>
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                    <div v-for="row in sarfResult.past_tense" :key="'past-'+row.pronoun" class="flex items-center gap-2 px-2.5 py-1.5 rounded" style="background: #faf8f0; border: 1px solid #e8dcc8;">
+                      <span class="text-[10px] font-medium flex-shrink-0" style="color: #a0896a; min-width: 32px;">{{ row.pronoun }}</span>
+                      <span class="text-sm font-arabic" dir="rtl" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ row.text }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="sarfResult.present_tense.length > 0">
+                  <div style="border-top: 1px solid #e0d5c0;" class="pt-3"></div>
+                  <p class="text-xs font-bold tracking-wider mb-2" style="color: #8b7355;">الفعل المضارع (Present / Indicative)</p>
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                    <div v-for="row in sarfResult.present_tense" :key="'pres-'+row.pronoun" class="flex items-center gap-2 px-2.5 py-1.5 rounded" style="background: #faf8f0; border: 1px solid #e8dcc8;">
+                      <span class="text-[10px] font-medium flex-shrink-0" style="color: #a0896a; min-width: 32px;">{{ row.pronoun }}</span>
+                      <span class="text-sm font-arabic" dir="rtl" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ row.text }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="sarfResult.present_subjunctive.length > 0" class="">
+                  <details class="group">
+                    <summary class="cursor-pointer text-xs font-medium tracking-wider flex items-center gap-1.5 px-1 py-1" style="color: #8b7355;">
+                      <span class="transition-transform duration-200 group-open:rotate-90 text-sm" style="color: #c9a84c;">▸</span>
+                      الفعل المضارع منصوب (Present Subjunctive)
+                    </summary>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-2">
+                      <div v-for="row in sarfResult.present_subjunctive" :key="'subj-'+row.pronoun" class="flex items-center gap-2 px-2.5 py-1.5 rounded" style="background: #faf8f0; border: 1px solid #e8dcc8;">
+                        <span class="text-[10px] font-medium flex-shrink-0" style="color: #a0896a; min-width: 32px;">{{ row.pronoun }}</span>
+                        <span class="text-sm font-arabic" dir="rtl" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ row.text }}</span>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+
+                <div v-if="sarfResult.present_jussive.length > 0" class="">
+                  <details class="group">
+                    <summary class="cursor-pointer text-xs font-medium tracking-wider flex items-center gap-1.5 px-1 py-1" style="color: #8b7355;">
+                      <span class="transition-transform duration-200 group-open:rotate-90 text-sm" style="color: #c9a84c;">▸</span>
+                      الفعل المضارع مجزوم (Present Jussive)
+                    </summary>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-2">
+                      <div v-for="row in sarfResult.present_jussive" :key="'jus-'+row.pronoun" class="flex items-center gap-2 px-2.5 py-1.5 rounded" style="background: #faf8f0; border: 1px solid #e8dcc8;">
+                        <span class="text-[10px] font-medium flex-shrink-0" style="color: #a0896a; min-width: 32px;">{{ row.pronoun }}</span>
+                        <span class="text-sm font-arabic" dir="rtl" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ row.text }}</span>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+
+                <!-- Masdars -->
+                <div v-if="sarfResult.masdars && sarfResult.masdars.length > 0">
+                  <div style="border-top: 1px solid #e0d5c0;" class="pt-3"></div>
+                  <p class="text-xs font-bold tracking-wider mb-2" style="color: #8b7355;">المصادر (Gerunds / Masdars)</p>
+                  <div class="flex flex-wrap gap-2">
+                    <span v-for="(m, mi) in sarfResult.masdars" :key="'mas-'+mi" class="px-3 py-1 text-sm font-arabic rounded" dir="rtl"
+                      style="background: #fffdf0; border: 1px solid #c9a84c; color: #5a4a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ m }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
+
     </main>
 
     <footer class="text-center py-4">
@@ -340,6 +455,13 @@ interface AnalyzeResponse { original: string; harakat: string; words: WordAnalys
 interface OCRPDFInfo { id: number; filename: string; total_pages: number; uploaded_at: string; pages_processed: number; pages_translated: number }
 interface OCRPage { id: number; pdf_id: number; page_number: number; raw_text: string; cleaned_text: string; confidence: number; translated_id: string; translated_en: string }
 interface OCRParagraph { index: number; arabic: string; translation_id: string; translation_en: string }
+interface SarfConjugationRow { pronoun: string; text: string }
+interface SarfAnalyzeResponse {
+  root: string; bab: number; classification: string
+  past_tense: SarfConjugationRow[]; present_tense: SarfConjugationRow[]
+  present_subjunctive: SarfConjugationRow[]; present_jussive: SarfConjugationRow[]
+  masdars: string[]
+}
 
 /* ── Tab state ── */
 const activeTab = ref<'analyze' | 'scan'>('analyze')
@@ -377,6 +499,12 @@ const translatingPageId = ref<number | null>(null)
 const paragraphsCache = ref<Record<number, OCRParagraph[]>>({})
 const paragraphExpandIds = ref<Record<number, boolean>>({})
 
+/* ── Sarf (morphology) state ── */
+const sarfResult = ref<SarfAnalyzeResponse | null>(null)
+const sarfLoading = ref(false)
+const sarfRoot = ref('')
+const sarfError = ref<string | null>(null)
+
 const config = useRuntimeConfig()
 
 /* ── POS badge colors ── */
@@ -409,6 +537,37 @@ async function translateText(text: string) {
   } catch { /* ignore */ } finally { translating.value = false }
 }
 async function copyResult() { if (result.value?.harakat) { await navigator.clipboard.writeText(result.value.harakat) } }
+
+/* ── Sarf morphology ── */
+async function analyzeRoot(root: string) {
+  if (!root || root === '—' || root.length !== 3) return
+  sarfRoot.value = root
+  sarfLoading.value = true
+  sarfResult.value = null
+  sarfError.value = null
+  try {
+    const res = await fetch(`${config.public.apiBase}/api/sarf/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ root, bab: 1 })
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: `Error: ${res.status}` }))
+      throw new Error(err.detail || `Error: ${res.status}`)
+    }
+    sarfResult.value = await res.json()
+  } catch (e) {
+    sarfError.value = e instanceof Error ? e.message : 'Gagal menganalisis'
+  } finally {
+    sarfLoading.value = false
+  }
+}
+function closeSarfModal() {
+  sarfResult.value = null
+  sarfError.value = null
+  sarfRoot.value = ''
+  sarfLoading.value = false
+}
 
 /* ── Accordion ── */
 function toggleExpand(pageId: number) { expandedPages.value[pageId] = !expandedPages.value[pageId] }
