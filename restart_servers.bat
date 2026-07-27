@@ -13,7 +13,7 @@ echo   Done.
 echo.
 
 echo [2/4] Starting Backend (CAMeL Tools + post-processing)...
-start "PenerjemahKitab-Backend" cmd /k "cd /d %~dp0backend && pyenv exec python3 -X utf8 -m uvicorn main:app --host 0.0.0.0 --port 8001"
+start "PenerjemahKitab-Backend" cmd /k "cd /d %~dp0backend && python -X utf8 -m uvicorn main:app --host 0.0.0.0 --port 8001"
 echo   Backend window opened (title: PenerjemahKitab-Backend)
 timeout /t 12 /nobreak >nul
 echo.

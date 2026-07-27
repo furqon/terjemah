@@ -218,9 +218,7 @@
                       {{ Math.round(page.confidence * 100) }}%</span>
                     <span v-if="page.translated_id" class="text-[9px]" style="color: #3a7a4d;">✓</span>
                   </div>
-                </div>
-
-                <!-- Expandable content -->
+                </div>                  <!-- Expandable content -->
                 <div v-if="expandedPages[page.id]" class="px-3 py-3" style="background: #fffdf5; border-top: 1px solid #e0d5c0;">
                   <!-- VIEW MODE -->
                   <div v-if="!editingPages[page.id]">
@@ -264,14 +262,50 @@
                       ><span v-if="translatingPageId === page.id"><svg class="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg></span><span v-else>{{ '☾' }} Terjemah</span></button>
                     </div>
                   </div>
-                  <!-- Translation results inside accordion -->
-                  <div v-if="page.translated_id" class="pt-2 mt-2" style="border-top: 1px dashed #e0d5c0;">
+
+                  <!-- Paragraph-level translations -->
+                  <div v-if="paragraphsCache[page.id] && paragraphsCache[page.id].length > 0" class="mt-2">
+                    <div style="border-top: 1px dashed #d4c5a9;" class="mb-2"></div>
+                    <div class="flex items-center justify-between mb-2">
+                      <p class="text-[10px] tracking-wider" style="color: #3a7a4d;">📜 TERJEMAHAN PER PARAGRAF</p>
+                      <button @click="toggleParagraphExpand(page.id)" class="text-[9px] px-2 py-0.5 rounded transition-all"
+                        style="background: #faf8f0; border: 1px solid #e0d5c0; color: #8b7355;"
+                        @mouseenter="$event.target.style.background = '#f5f0e0'" @mouseleave="$event.target.style.background = '#faf8f0'">
+                        {{ paragraphExpandIds[page.id] ? '▲ Sembunyikan' : '▼ Tampilkan ' + paragraphsCache[page.id].length + ' paragraf' }}</button>
+                    </div>
+
+                    <div v-if="paragraphExpandIds[page.id]">
+                      <div v-for="(para, pi) in paragraphsCache[page.id]" :key="pi"
+                        class="mb-2 rounded-lg overflow-hidden transition-all duration-200"
+                        :style="{
+                          background: pi % 2 === 0 ? '#faf8f0' : '#fffdf5',
+                          border: '1px solid #e8dcc8',
+                        }"
+                      >
+                        <div class="px-3 py-2 flex items-start gap-2">
+                          <span class="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-bold"
+                            style="background: #c9a84c; color: white;">{{ pi + 1 }}</span>
+                          <div class="flex-1 min-w-0">
+                            <div dir="rtl" class="mb-1.5">
+                              <p class="text-sm font-arabic leading-relaxed" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ para.arabic }}</p>
+                            </div>
+                            <div style="border-top: 1px dashed #e0d5c0;" class="mb-1"></div>
+                            <div>
+                              <p class="text-[12px] leading-relaxed" style="color: #3a7a4d;">{{ para.translation_id }}</p>
+                              <p v-if="para.translation_en" class="text-[11px] leading-relaxed mt-0.5" style="color: #6a8aaa;">{{ para.translation_en }}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Fallback: whole-page translation (for legacy data without paragraphs) -->
+                  <div v-if="(!paragraphsCache[page.id] || paragraphsCache[page.id].length === 0) && page.translated_id" class="pt-2 mt-2" style="border-top: 1px dashed #e0d5c0;">
                     <p class="text-[10px] tracking-wider mb-1" style="color: #3a7a4d;">BAHASA INDONESIA</p>
                     <p class="text-sm leading-relaxed" style="color: #2a4a3a;">{{ page.translated_id }}</p>
-                  </div>
-                  <div v-if="page.translated_en" class="pt-1">
-                    <p class="text-[10px] tracking-wider mb-1" style="color: #4a6a8a;">ENGLISH</p>
-                    <p class="text-xs leading-relaxed" style="color: #2a3a4a;">{{ page.translated_en }}</p>
+                    <p v-if="page.translated_en" class="text-[10px] tracking-wider mt-1" style="color: #4a6a8a;">ENGLISH</p>
+                    <p v-if="page.translated_en" class="text-xs leading-relaxed" style="color: #2a3a4a;">{{ page.translated_en }}</p>
                   </div>
                 </div>
               </div>
@@ -305,6 +339,7 @@ interface WordAnalysis { word: string; lemma: string; root: string; pos_type: st
 interface AnalyzeResponse { original: string; harakat: string; words: WordAnalysis[]; word_count: number }
 interface OCRPDFInfo { id: number; filename: string; total_pages: number; uploaded_at: string; pages_processed: number; pages_translated: number }
 interface OCRPage { id: number; pdf_id: number; page_number: number; raw_text: string; cleaned_text: string; confidence: number; translated_id: string; translated_en: string }
+interface OCRParagraph { index: number; arabic: string; translation_id: string; translation_en: string }
 
 /* ── Tab state ── */
 const activeTab = ref<'analyze' | 'scan'>('analyze')
@@ -337,6 +372,10 @@ const savingPageIds = ref<Record<number, boolean>>({})
 const tashkeelingPageIds = ref<Record<number, boolean>>({})
 const translatingPdfId = ref<number | null>(null)
 const translatingPageId = ref<number | null>(null)
+
+/* ── Paragraph state ── */
+const paragraphsCache = ref<Record<number, OCRParagraph[]>>({})
+const paragraphExpandIds = ref<Record<number, boolean>>({})
 
 const config = useRuntimeConfig()
 
@@ -391,6 +430,12 @@ async function loadPages(pdfId: number) {
           expandedPages.value[p.id] = true
         }
       }
+      // Load paragraph translations for all pages
+      for (const p of d.pages) {
+        if (p.translated_id) {
+          loadPageParagraphs(p.id)
+        }
+      }
     }
   } catch { /* ignore */ }
 }
@@ -424,19 +469,55 @@ async function tashkeelPageText(page: OCRPage) {
   } catch { /* ignore */ } finally { tashkeelingPageIds.value[page.id] = false }
 }
 
-/* ── Translate page ── */
+/* ── Paragraphs ── */
+async function loadPageParagraphs(pageId: number) {
+  try {
+    const res = await fetch(`${config.public.apiBase}/api/ocr/paragraphs/${pageId}`);
+    if (res.ok) { const d = await res.json(); paragraphsCache.value[pageId] = d.paragraphs || []; if (d.paragraphs?.length) paragraphExpandIds.value[pageId] = true }
+  } catch { /* ignore */ }
+}
+function getParagraphs(pageId: number): OCRParagraph[] { return paragraphsCache.value[pageId] || [] }
+function toggleParagraphExpand(pageId: number) { paragraphExpandIds.value[pageId] = !paragraphExpandIds.value[pageId] }
+
+/* ── Translate page (paragraph-level) ── */
 async function translatePage(pageId: number, _pn: number, text: string) {
   if (!text) return; translatingPageId.value = pageId
   try {
-    const res = await fetch(`${config.public.apiBase}/api/ocr/translate-page`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page_id: pageId, text }) })
-    if (res.ok) { for (const [pid, pages] of Object.entries(pagesCache.value)) { if (pages.some(p => p.id === pageId)) { await loadPages(Number(pid)); toggleEdit(pageId, false); break } } }
+    const res = await fetch(`${config.public.apiBase}/api/ocr/translate-paragraphs`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page_id: pageId, text })
+    })
+    if (res.ok) {
+      const d = await res.json()
+      paragraphsCache.value[pageId] = d.paragraphs || []
+      paragraphExpandIds.value[pageId] = true  // Auto-expand paragraphs
+      // Reload pages to update the page-level translated_id/text
+      for (const [pid, pages] of Object.entries(pagesCache.value)) {
+        if (pages.some(p => p.id === pageId)) { await loadPages(Number(pid)); toggleEdit(pageId, false); break }
+      }
+    }
   } catch { /* ignore */ } finally { translatingPageId.value = null }
 }
 
-/* ── Bulk translate ── */
+/* ── Bulk translate (paragraph-level per page) ── */
 async function translatePdf(pdfId: number) {
   translatingPdfId.value = pdfId
-  try { const res = await fetch(`${config.public.apiBase}/api/ocr/translate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pdf_id: pdfId }) }); if (res.ok) { await loadPdfList(); await loadPages(pdfId) } } catch { /* ignore */ }
+  try {
+    // Get all pages for this PDF and translate each one
+    const res = await fetch(`${config.public.apiBase}/api/ocr/pages/${pdfId}`);
+    if (res.ok) {
+      const d = await res.json();
+      const pages = d.pages || []
+      for (const page of pages) {
+        const text = (page.cleaned_text || page.raw_text || '').trim()
+        if (text && !page.translated_id) {
+          await translatePage(page.id, page.page_number, text)
+        }
+      }
+      await loadPdfList();
+      await loadPages(pdfId)
+    }
+  } catch { /* ignore */ }
   finally { translatingPdfId.value = null }
 }
 

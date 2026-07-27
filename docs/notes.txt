@@ -1,1 +1,8 @@
 teserractOCR - per page scan -> background -> translate -> per paragraph translation -> save jadi buku
+
+- alaikum, dommir masih belum kebaca, 
+- irob
+
+check this apps:
+https://github.com/alsaydi/sarf
+and demo: https://sarf.one

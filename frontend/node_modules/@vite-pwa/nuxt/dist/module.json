@@ -1,0 +1,12 @@
+{
+  "name": "@vite-pwa/nuxt",
+  "configKey": "pwa",
+  "compatibility": {
+    "nuxt": ">=3.6.5"
+  },
+  "version": "1.1.1",
+  "builder": {
+    "@nuxt/module-builder": "0.8.3",
+    "unbuild": "2.0.0"
+  }
+}

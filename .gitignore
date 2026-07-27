@@ -38,3 +38,4 @@ backend/*.pyc
 # PDF OCR feature
 backend/ocr_texts.db
 backend/uploads/
+nul

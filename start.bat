@@ -22,7 +22,7 @@ REM Step 1: Start Backend (FastAPI)
 echo.
 echo [1/2] Starting Backend (FastAPI) on :8000...
 cd /d "%~dp0backend"
-start "PenerjemahKitab-Backend" cmd /c "pyenv exec python3 -X utf8 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+start "PenerjemahKitab-Backend" cmd /c "python -X utf8 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
 cd /d "%~dp0"
 timeout /t 8 /nobreak >nul
 

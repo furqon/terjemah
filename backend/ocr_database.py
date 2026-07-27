@@ -194,6 +194,13 @@ class OCRDatabase:
 
     # ── Paragraph operations ─────────────────────────────────────────
 
+    def delete_paragraphs_for_page(self, page_id: int) -> None:
+        """Delete all paragraphs for a page (e.g., before re-translating)."""
+        with self._conn() as conn:
+            conn.execute(
+                "DELETE FROM paragraphs WHERE page_id = ?", (page_id,)
+            )
+
     def save_paragraph(
         self,
         page_id: int,

@@ -482,6 +482,27 @@ class OCRPDFInfo(BaseModel):
     pages_translated: int
 
 
+# ── Paragraph models ───────────────────────────────────────────────────
+
+class OCRParagraphItem(BaseModel):
+    index: int
+    arabic: str
+    translation_id: str = ""
+    translation_en: str = ""
+
+
+class OCRTranslateParagraphsRequest(BaseModel):
+    page_id: int
+    text: str  # Full page text to split into paragraphs
+
+
+class OCRTranslateParagraphsResponse(BaseModel):
+    page_id: int
+    page_number: int
+    paragraphs: list[OCRParagraphItem]
+    total: int
+
+
 # ── API endpoints ───────────────────────────────────────────────────
 
 @app.get("/api/health")
@@ -748,6 +769,129 @@ def ocr_delete(pdf_id: int):
         raise HTTPException(status_code=404, detail="PDF not found")
     ocr_db.delete_pdf(pdf_id)
     return {"status": "deleted", "pdf_id": pdf_id}
+
+
+# ── Paragraph-level translation ─────────────────────────────────────
+
+
+def _split_paragraphs(text: str) -> list[str]:
+    """Split Arabic text into paragraphs.
+
+    Splits on double newlines first (true paragraph breaks),
+    then further splits on single newlines for OCR text where
+    each line is typically a separate paragraph/verse.
+
+    Returns a list of non-empty stripped paragraphs.
+    """
+    if not text.strip():
+        return []
+
+    # Try double newlines first (true paragraph breaks)
+    paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+
+    # If that yields only one block, try single newlines
+    if len(paragraphs) <= 1 and "\n" in text:
+        paragraphs = [p.strip() for p in text.split("\n") if p.strip()]
+
+    # Filter out very short lines (likely noise)
+    paragraphs = [p for p in paragraphs if len(p) > 2]
+
+    return paragraphs if paragraphs else [text.strip()]
+
+
+@app.post("/api/ocr/translate-paragraphs", response_model=OCRTranslateParagraphsResponse)
+def ocr_translate_paragraphs(request: OCRTranslateParagraphsRequest):
+    """Split page text into paragraphs, translate each individually.
+
+    Takes a page_id and page text, splits by newlines into paragraphs,
+    translates each paragraph to Indonesian and English, saves to the
+    paragraphs table, and returns the results.
+    """
+    page_row = ocr_db.get_page_by_id(request.page_id)
+    if not page_row:
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    if not request.text.strip():
+        return OCRTranslateParagraphsResponse(
+            page_id=request.page_id,
+            page_number=page_row["page_number"],
+            paragraphs=[],
+            total=0,
+        )
+
+    # Split into paragraphs
+    paragraphs = _split_paragraphs(request.text)
+
+    # Remove old paragraphs for this page before inserting new ones
+    ocr_db.delete_paragraphs_for_page(request.page_id)
+
+    # Persist the (possibly user-edited) text back to the pages table
+    ocr_db.save_page(
+        page_row["pdf_id"],
+        page_row["page_number"],
+        page_row.get("raw_text", ""),
+        request.text,
+        page_row.get("confidence", 0.0),
+    )
+
+    results: list[OCRParagraphItem] = []
+    for idx, para_text in enumerate(paragraphs):
+        tid, _engine_id = _translate_id_fallback(para_text)
+        time.sleep(0.3)
+        ten, _engine_en = _translate_en_fallback(para_text)
+
+        ocr_db.save_paragraph(
+            request.page_id, idx, para_text, tid, ten,
+        )
+
+        results.append(OCRParagraphItem(
+            index=idx,
+            arabic=para_text,
+            translation_id=tid,
+            translation_en=ten,
+        ))
+
+        # Small delay between translations to avoid rate limiting
+        time.sleep(0.3)
+
+    # Also save the overall page-level translation (concatenated)
+    full_id = " ".join([p.translation_id for p in results])
+    full_en = " ".join([p.translation_en for p in results])
+    ocr_db.save_translation(request.page_id, full_id, full_en)
+
+    return OCRTranslateParagraphsResponse(
+        page_id=request.page_id,
+        page_number=page_row["page_number"],
+        paragraphs=results,
+        total=len(results),
+    )
+
+
+@app.get("/api/ocr/paragraphs/{page_id}", response_model=OCRTranslateParagraphsResponse)
+def ocr_get_paragraphs(page_id: int):
+    """Get saved paragraph translations for a page."""
+    page_row = ocr_db.get_page_by_id(page_id)
+    if not page_row:
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    rows = ocr_db.get_paragraphs_for_page(page_id)
+    paragraphs = [
+        OCRParagraphItem(
+            index=r["paragraph_index"],
+            arabic=r["arabic_text"],
+            translation_id=r.get("translation_id", "") or "",
+            translation_en=r.get("translation_en", "") or "",
+        )
+        for r in rows
+    ]
+
+    return OCRTranslateParagraphsResponse(
+        page_id=page_id,
+        page_number=page_row["page_number"],
+        paragraphs=paragraphs,
+        total=len(paragraphs),
+    )
+
 
 
 @app.get("/api/ocr/stats")
