@@ -75,11 +75,13 @@
                   style="color: #8b7355; border: 1px solid #e0d5c0; background: #faf8f0;"
                   @mouseenter="$event.target.style.background = '#f5f0e0'" @mouseleave="$event.target.style.background = '#faf8f0'">Salin Teks</button>
               </div>
-              <div class="px-4 pb-1">
-                <div class="flex items-center justify-center gap-2 text-xs" style="color: #a0896a;"><span>▸</span><span class="tracking-wider">Analisis Per Kata</span><span>◂</span></div>
-              </div>
-              <div class="px-4 pb-4">
-                <div class="flex flex-wrap justify-center gap-1" style="direction: rtl;">
+              <!-- Per-word analysis (collapsible) -->
+              <details class="group px-4 pb-4">
+                <summary class="cursor-pointer text-xs tracking-wider font-medium flex items-center justify-center gap-2 py-1 transition-colors" style="color: #a0896a;">
+                  <span class="transition-transform duration-200 group-open:rotate-90 text-sm" style="color: #c9a84c;">▸</span>
+                  <span class="tracking-wider">Analisis Per Kata</span>
+                </summary>
+                <div class="flex flex-wrap justify-center gap-1 mt-3" style="direction: rtl;">
                   <div v-for="(word, i) in result.words" :key="i" class="word-card flex flex-col items-center rounded-sm transition-all duration-300" style="direction: ltr; min-width: 90px; max-width: 130px; flex: 1 0 auto;">
                     <div class="w-full text-center px-1.5 py-1.5" style="background: #faf8f0;">
                       <p class="text-xl font-arabic leading-tight" dir="rtl" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ word.word }}</p>
@@ -93,7 +95,7 @@
                     </div>
                   </div>
                 </div>
-              </div>
+              </details>
               <div class="text-center pb-3">
                 <div style="border-top: 1px solid #e8dcc8; width: 40%; margin: 0 auto;"></div>
                 <p class="text-[10px] mt-2 tracking-wider" style="color: #a0896a;">{{ result.word_count }} kata — {{ result.original.length }} karakter</p>
@@ -101,12 +103,13 @@
               <div class="h-1" style="background: linear-gradient(90deg, #d4c5a9 0%, #c9a84c 30%, #c9a84c 70%, #d4c5a9 100%);"></div>
             </div>
 
-            <!-- Translation results -->
+            <!-- Translation results (collapsible) -->
             <div v-if="translating" class="rounded-lg p-4 text-center" style="background: #fffdf5; border: 1px solid #d4c5a9;"><p class="text-sm italic" style="color: #a0896a;">Menerjemahkan...</p></div>
-            <div v-if="translation" class="rounded-lg overflow-hidden" style="background: #fffdf5; border: 1px solid #d4c5a9;">
-              <div class="h-1" style="background: linear-gradient(90deg, #d4c5a9 0%, #3a7a4d 30%, #3a7a4d 70%, #d4c5a9 100%);"></div>
-              <div class="p-4">
-                <div class="flex items-center justify-center gap-2 text-xs mb-3" style="color: #a0896a;"><span>▸</span><span class="tracking-wider">Terjemahan Lengkap</span><span>◂</span></div>
+            <details v-if="translation" class="group rounded-lg overflow-hidden" style="background: #fffdf5; border: 1px solid #d4c5a9;">
+              <summary class="cursor-pointer px-4 py-2.5 text-xs tracking-wider font-medium flex items-center justify-between transition-colors" style="color: #3a7a4d;">
+                <span class="flex items-center gap-1.5"><span class="transition-transform duration-200 group-open:rotate-90 text-sm" style="color: #c9a84c;">▸</span> Terjemahan Lengkap</span>
+              </summary>
+              <div class="p-4 pt-2">
                 <div class="space-y-3">
                   <div class="text-right" dir="rtl"><p class="text-[10px] tracking-wider mb-1" style="color: #8b7355;">TEKS ARAB</p><p class="text-xl font-arabic leading-relaxed" style="color: #3a2a1a; font-family: 'Amiri', 'Traditional Arabic', serif;">{{ result.harakat }}</p></div>
                   <div style="border-top: 1px dashed #e0d5c0;"></div>
@@ -115,10 +118,10 @@
                   <div><p class="text-[10px] tracking-wider mb-1" style="color: #4a6a8a;">ENGLISH</p><p class="text-base leading-relaxed" style="color: #2a3a4a;">{{ translation.translation_en }}</p></div>
                 </div>
               </div>
-            </div>
+            </details>
 
-            <!-- Detail table -->
-            <details class="group rounded-lg overflow-hidden" style="background: #fffdf5; border: 1px solid #d4c5a9;">
+            <!-- Detail table (default open) -->
+            <details open class="group rounded-lg overflow-hidden" style="background: #fffdf5; border: 1px solid #d4c5a9;">
               <summary class="cursor-pointer px-4 py-2.5 text-xs tracking-wider font-medium flex items-center justify-between transition-colors" style="color: #5a7a4a;">
                 <span class="flex items-center gap-1.5"><span class="transition-transform duration-200 group-open:rotate-90 text-sm" style="color: #c9a84c;">▸</span> Detail Lengkap</span>
                 <span style="color: #a0896a;">{{ result.word_count }} kata</span>
@@ -127,26 +130,47 @@
                 <table class="w-full text-xs border-collapse">
                   <thead><tr style="border-bottom: 1px solid #e0d5c0;"><th class="p-2 text-left font-medium" style="color: #8b7355;">#</th><th class="p-2 text-right font-medium" style="color: #8b7355;">Arab</th><th class="p-2 text-left font-medium" style="color: #8b7355;">Lemma</th><th class="p-2 text-left font-medium" style="color: #8b7355;">Akar</th><th class="p-2 text-left font-medium" style="color: #8b7355;">Jenis</th><th class="p-2 text-left font-medium" style="color: #8b7355;">ID</th><th class="p-2 text-left font-medium" style="color: #8b7355;">EN</th></tr></thead>
                   <tbody>
-                    <tr v-for="(word, i) in result.words" :key="'t'+i" class="transition-colors" style="border-bottom: 1px solid #f0eadc;" @mouseenter="$event.currentTarget.style.background = '#faf8f0'" @mouseleave="$event.currentTarget.style.background = 'transparent'">
-                      <td class="p-2" style="color: #a0896a;">{{ i + 1 }}</td>
-                      <td class="p-2 font-arabic text-right text-sm" dir="rtl" style="color: #3a2a1a;">{{ word.word }}</td>
-                      <td class="p-2 font-medium" style="color: #5a7a4a;">{{ word.lemma }}</td>
-                      <td class="p-2" style="color: #a0896a;">
-                        <span v-if="word.root && word.root !== '—'" class="flex items-center gap-1">
-                          <span style="font-family: 'Traditional Arabic', serif;">{{ word.root }}</span>
-                          <button @click="analyzeRoot(word.root)" :disabled="sarfLoading"
-                            class="text-xs cursor-pointer transition-all duration-200 hover:scale-110"
-                            style="opacity: 0.6; filter: drop-shadow(0 0 0 transparent);"
-                            @mouseenter="$event.target.style.opacity = '1'"
-                            @mouseleave="$event.target.style.opacity = '0.6'"
-                            :title="'Analisis morfologi: ' + word.root">🔬</button>
-                        </span>
-                        <span v-else>—</span>
-                      </td>
-                      <td class="p-2"><span class="px-1.5 py-0.5 rounded-sm text-[10px] font-bold" :class="posBadgeClass(word.pos_type)">{{ word.pos_arabic }}</span></td>
-                      <td class="p-2" style="color: #3a7a4d;">{{ word.gloss_id || '—' }}</td>
-                      <td class="p-2" style="color: #5a7a8a;">{{ word.gloss_en || '—' }}</td>
-                    </tr>
+                    <template v-for="(word, i) in result.words" :key="'t'+i">
+                      <tr class="transition-colors" style="border-bottom: 1px solid #f0eadc;" @mouseenter="$event.currentTarget.style.background = '#faf8f0'" @mouseleave="$event.currentTarget.style.background = 'transparent'">
+                        <td class="p-2" style="color: #a0896a;">
+                          <span v-if="word.morphemes && word.morphemes.length > 1"
+                            @click.stop="toggleMorpheme(i)"
+                            class="inline-block w-3 cursor-pointer select-none text-[10px] transition-transform duration-150"
+                            :style="{ transform: expandedMorphemes[i] ? 'rotate(90deg)' : 'rotate(0deg)' }"
+                            style="color: #c9a84c;"
+                          >▸</span>
+                          {{ i + 1 }}
+                        </td>
+                        <td class="p-2 font-arabic text-right text-sm" dir="rtl" style="color: #3a2a1a;">{{ word.word }}</td>
+                        <td class="p-2 font-medium" style="color: #5a7a4a;">{{ word.lemma }}</td>
+                        <td class="p-2" style="color: #a0896a;">
+                          <span v-if="word.root && word.root !== '—'" class="flex items-center gap-1">
+                            <span style="font-family: 'Traditional Arabic', serif;">{{ word.root }}</span>
+                            <button @click="analyzeRoot(word.root)" :disabled="sarfLoading"
+                              class="text-xs cursor-pointer transition-all duration-200 hover:scale-110"
+                              style="opacity: 0.6; filter: drop-shadow(0 0 0 transparent);"
+                              @mouseenter="$event.target.style.opacity = '1'"
+                              @mouseleave="$event.target.style.opacity = '0.6'"
+                              :title="'Analisis morfologi: ' + word.root">🔬</button>
+                          </span>
+                          <span v-else>—</span>
+                        </td>
+                        <td class="p-2"><span class="px-1.5 py-0.5 rounded-sm text-[10px] font-bold" :class="posBadgeClass(word.pos_type)">{{ word.pos_arabic }}</span></td>
+                        <td class="p-2" style="color: #3a7a4d;">{{ word.gloss_id || '—' }}</td>
+                        <td class="p-2" style="color: #5a7a8a;">{{ word.gloss_en || '—' }}</td>
+                      </tr>
+                      <!-- Morpheme sub-rows -->
+                      <tr v-if="expandedMorphemes[i] && word.morphemes && word.morphemes.length > 1"
+                        v-for="(m, mi) in word.morphemes" :key="'m-'+i+'-'+mi"
+                        style="background: #faf8f0; border-bottom: 1px solid #e8dcc8;">
+                        <td class="p-1 text-center text-[9px]" style="color: #c9a84c;">└</td>
+                        <td class="p-1 pl-5 pr-2 font-arabic text-xs text-right" dir="rtl" style="color: #5a7a4a;">{{ m.text }}</td>
+                        <td class="p-1 text-[10px]" style="color: #8b7355;">{{ m.tag }}</td>
+                        <td class="p-1 text-[10px]" style="color: #6a5a3e; font-family: 'Traditional Arabic', serif;">{{ m.root && m.root !== '—' ? m.root : '—' }}</td>
+                        <td class="p-1 text-[10px]" style="color: #6a8aaa;">{{ m.gloss || '—' }}</td>
+                        <td class="p-1" colspan="2"></td>
+                      </tr>
+                    </template>
                   </tbody>
                 </table>
               </div>
@@ -450,7 +474,8 @@
 import { ref, onMounted } from 'vue'
 
 /* ── Types ── */
-interface WordAnalysis { word: string; lemma: string; root: string; pos_type: string; pos_arabic: string; gloss_id: string; gloss_en: string }
+interface Morpheme { text: string; tag: string; gloss: string; root: string }
+interface WordAnalysis { word: string; lemma: string; root: string; pos_type: string; pos_arabic: string; gloss_id: string; gloss_en: string; morphemes: Morpheme[] }
 interface AnalyzeResponse { original: string; harakat: string; words: WordAnalysis[]; word_count: number }
 interface OCRPDFInfo { id: number; filename: string; total_pages: number; uploaded_at: string; pages_processed: number; pages_translated: number }
 interface OCRPage { id: number; pdf_id: number; page_number: number; raw_text: string; cleaned_text: string; confidence: number; translated_id: string; translated_en: string }
@@ -499,6 +524,10 @@ const translatingPageId = ref<number | null>(null)
 const paragraphsCache = ref<Record<number, OCRParagraph[]>>({})
 const paragraphExpandIds = ref<Record<number, boolean>>({})
 
+/* ── Morpheme expand state ── */
+const expandedMorphemes = ref<Record<number, boolean>>({})
+function toggleMorpheme(idx: number) { expandedMorphemes.value[idx] = !expandedMorphemes.value[idx] }
+
 /* ── Sarf (morphology) state ── */
 const sarfResult = ref<SarfAnalyzeResponse | null>(null)
 const sarfLoading = ref(false)
@@ -540,8 +569,11 @@ async function copyResult() { if (result.value?.harakat) { await navigator.clipb
 
 /* ── Sarf morphology ── */
 async function analyzeRoot(root: string) {
-  if (!root || root === '—' || root.length !== 3) return
-  sarfRoot.value = root
+  // Strip dots and non-Arabic letter markers from CAMeL Tools root format
+  // e.g. "س.ل.م" → "سلم", "ع.ل.#" → "عل" (skip unknown marker)
+  const cleanRoot = root.replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g, '')
+  if (!cleanRoot || cleanRoot === '—' || cleanRoot.length < 3) return
+  sarfRoot.value = cleanRoot
   sarfLoading.value = true
   sarfResult.value = null
   sarfError.value = null
@@ -549,7 +581,7 @@ async function analyzeRoot(root: string) {
     const res = await fetch(`${config.public.apiBase}/api/sarf/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ root, bab: 1 })
+      body: JSON.stringify({ root: cleanRoot, bab: 1 })
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: `Error: ${res.status}` }))

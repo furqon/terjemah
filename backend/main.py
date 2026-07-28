@@ -2,6 +2,7 @@
 # Tashkeel + word analysis + translation + PDF OCR.
 
 import os
+import re
 import threading
 import time
 import uuid
@@ -57,6 +58,17 @@ WORD_OVERRIDES: dict[str, str] = {
 }
 
 
+# Root corrections: CAMeL Tools uses '#' for weak radicals (و/ي) it cannot
+# determine. Map problematic CAMeL roots → corrected roots here.
+# Add entries as you encounter more words with '#' in the root.
+ROOT_OVERRIDES: dict[str, str] = {
+    # Common form III verbs (wazn فاعل) where the middle radical is weak
+    'ش.#.ر': 'ش.و.ر',  # شاوَر / مشاورة / يتشاور (root: ش و ر — counsel/consult)
+    # Prepositions / defective words where the final radical is weak
+    'ع.ل.#': 'ع.ل.و',  # عَلَى / عليكم (root: ع ل و — on/above)
+}
+
+
 def _fix_sun_letter_shadda(word: str) -> str:
     """If word starts with ال + sun letter without shadda, add shadda+fatha."""
     if len(word) >= 4 and word[:2] == "ال" and word[2] in SUN_LETTERS:
@@ -100,10 +112,10 @@ def _postprocess_diacritized(original: str, diacritized: str) -> str:
 
 app = FastAPI(title="Penerjemah Kitab API")
 
-# Allow frontend (localhost:3000) to call backend (localhost:8000)
+# Allow frontends on ports 3000 or 3001 to call backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -187,6 +199,14 @@ class AnalyzeRequest(BaseModel):
     text: str
 
 
+class Morpheme(BaseModel):
+    """A single morpheme within a word (e.g., prefix, stem, suffix/pronoun)."""
+    text: str       # Arabic text of the morpheme
+    tag: str        # POS tag (PREP, PRON_2MP, PV, etc.)
+    gloss: str      # English gloss for this morpheme
+    root: str       # Root letters (only for lexical morphemes; '—' for affixes)
+
+
 class WordAnalysis(BaseModel):
     word: str          # Diacritized word form
     lemma: str         # Lexical form (lemma)
@@ -195,6 +215,7 @@ class WordAnalysis(BaseModel):
     pos_arabic: str    # POS type in Arabic (إسم, فعل, حرف, etc.)
     gloss_id: str      # Indonesian translation
     gloss_en: str      # English gloss / meaning
+    morphemes: list[Morpheme] = []  # Morpheme breakdown (prefixes, stems, suffixes/pronouns)
 
 
 class AnalyzeResponse(BaseModel):
@@ -240,6 +261,64 @@ def _map_pos(pos_tag: str) -> str:
     return pos_tag  # Return raw tag if no mapping
 
 
+# Tags that carry a lexical root (verbs, nouns, adjectives)
+_LEXICAL_ROOT_TAGS = frozenset({
+    'PV', 'IV', 'NOUN', 'NOUN_PROP', 'NOUN_QUANT', 'NOUN_NUM',
+    'ADJ',
+})
+
+
+def _is_lexical_morpheme(tag: str) -> bool:
+    """Check if a CAMeL morpheme tag represents a lexical stem (verb/noun)."""
+    if not tag:
+        return False
+    # Extract the base tag (before ':' or '_' suffix)
+    base = tag.split(':')[0].split('_')[0]
+    return base in _LEXICAL_ROOT_TAGS
+
+
+def _parse_morphemes_from_bw(bw: str, gloss: str, word_root: str = '') -> list[dict]:
+    """Parse CAMeL Tools bw and gloss fields into morpheme objects.
+
+    The bw field uses '+' to separate morphemes. Each morpheme has
+    Arabic text + '/' + POS tag (e.g., عَلَي/PREP+كُم/PRON_2MP).
+    The gloss field also uses '+' to separate per-morpheme glosses.
+
+    Args:
+        bw: Buckwalter-encoded morpheme sequence.
+        gloss: Per-morpheme English glosses.
+        word_root: Root letters for the whole word; assigned only to
+                   lexical morphemes (verbs, nouns). Affixes get '—'.
+
+    Returns a list of dicts with keys: text, tag, gloss, root.
+    Returns empty list if the word is a single morpheme (no + in bw).
+    """
+    if not bw or '+' not in bw:
+        return []
+
+    parts = bw.split('+')
+    gloss_parts = gloss.split('+') if gloss else []
+
+    morphemes: list[dict] = []
+    for i, part in enumerate(parts):
+        # Split by the LAST '/' to separate Arabic text from tag
+        seg = part.rsplit('/', 1)
+        text = seg[0]
+        tag = seg[1] if len(seg) > 1 else ''
+
+        # Get corresponding gloss, cleaning up Buckwalter placeholders
+        m_gloss = ''
+        if i < len(gloss_parts):
+            m_gloss = gloss_parts[i].strip('_')
+
+        # Root: only for lexical morphemes
+        m_root = word_root if _is_lexical_morpheme(tag) else '—'
+
+        morphemes.append({'text': text, 'tag': tag, 'gloss': m_gloss, 'root': m_root})
+
+    return morphemes
+
+
 def analyze_words(text: str) -> AnalyzeResponse:
     """Get harakat + word-by-word analysis for Arabic text."""
     if not text.strip():
@@ -265,15 +344,20 @@ def analyze_words(text: str) -> AnalyzeResponse:
             best = word_analyses.analyses[0]
             if isinstance(best.analysis, dict):
                 a = best.analysis
-                # Get the diacritized word form (from the harakat output to keep post-processing)
                 word_form = harakat_words[idx] if idx < len(harakat_words) else words[idx]
                 lemma = a.get('lex', words[idx])
                 root = a.get('root', '—')
+                # Apply root overrides to fix '#' placeholders from CAMeL
+                root = ROOT_OVERRIDES.get(root, root)
                 pos_tag = a.get('pos', 'unknown')
-                # Use Indonesian + English dictionaries for word translations
                 gloss_id = dict_lookup(lemma) or '?'
                 gloss_en = dict_lookup_en(lemma) or '?'
                 pos_arabic = _map_pos(pos_tag)
+                morpheme_data = _parse_morphemes_from_bw(
+                    a.get('bw', ''),
+                    a.get('gloss', ''),
+                    word_root=root
+                )
             else:
                 word_form = harakat_words[idx] if idx < len(harakat_words) else words[idx]
                 lemma = words[idx]
@@ -282,6 +366,7 @@ def analyze_words(text: str) -> AnalyzeResponse:
                 pos_arabic = '—'
                 gloss_id = ''
                 gloss_en = ''
+                morpheme_data = []
         else:
             word_form = harakat_words[idx] if idx < len(harakat_words) else words[idx]
             lemma = words[idx]
@@ -290,6 +375,7 @@ def analyze_words(text: str) -> AnalyzeResponse:
             pos_arabic = '—'
             gloss_id = ''
             gloss_en = ''
+            morpheme_data = []
 
         word_list.append(WordAnalysis(
             word=word_form,
@@ -299,6 +385,7 @@ def analyze_words(text: str) -> AnalyzeResponse:
             pos_arabic=pos_arabic,
             gloss_id=gloss_id,
             gloss_en=gloss_en,
+            morphemes=[Morpheme(**m) for m in morpheme_data],
         ))
 
     return AnalyzeResponse(
@@ -589,17 +676,19 @@ def sarf_analyze(request: SarfAnalyzeRequest):
             detail="Sarf morphology engine not available. Ensure Java 17+ is installed and sarf-source is compiled."
         )
 
-    if len(request.root) != 3:
-        raise HTTPException(status_code=400, detail="Root must be exactly 3 Arabic letters")
+    # Clean root: strip dots and non-Arabic markers (CAMeL Tools returns "س.ل.م" format)
+    clean_root = re.sub(r'[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]', '', request.root)
+    if len(clean_root) < 3 or len(clean_root) > 4:
+        raise HTTPException(status_code=400, detail=f"Root must be 3 or 4 Arabic letters, got '{clean_root}' ({len(clean_root)} chars)")
 
     try:
-        raw = sarf_client.analyze(request.root, request.bab)
+        raw = sarf_client.analyze(clean_root, request.bab)
 
         def _dict_to_rows(data: dict) -> list[SarfConjugationRow]:
             return [SarfConjugationRow(pronoun=k, text=v) for k, v in data.items()]
 
         return SarfAnalyzeResponse(
-            root=raw.get("root", request.root),
+            root=raw.get("root", clean_root),
             bab=raw.get("bab", request.bab),
             classification=raw.get("classification", ""),
             past_tense=_dict_to_rows(raw.get("pastTense", {})),
