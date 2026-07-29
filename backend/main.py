@@ -55,6 +55,11 @@ PHRASE_OVERRIDES: dict[str, str] = {
 # Keys should match the EXACT diacritized form CAMeL outputs (including case endings).
 WORD_OVERRIDES: dict[str, str] = {
     # Add entries as you find problematic words: "camel_output": "corrected",
+    # Verb vs noun: CAMeL often prefers noun/masdar reading for common verbs
+    # in simple VSO sentences like "ضرب زيد عمر".
+    'ضَرْبِ': 'ضَرَبَ',   # ضرب as past tense "he hit" (not the masdar "hitting")
+    'ضَرْبَ': 'ضَرَبَ',   # Accusative case variant
+    'ضَرْبُ': 'ضَرَبَ',   # Nominative case variant
 }
 
 
@@ -515,6 +520,46 @@ class SarfAnalyzeResponse(BaseModel):
     masdars: list[str]
 
 
+# ── Tashrif endpoint models ───────────────────────────────────────────
+
+class TashrifAnalyzeRequest(BaseModel):
+    root: str  # Arabic root letters (3 or 4)
+    word: str = ""  # Optional: the inflected word form for Rumus classification
+    bab: int | None = None  # Optional bab override
+
+
+class TashrifRow(BaseModel):
+    form_number: int
+    form_name: str
+    form_label_ar: str = ""
+    form_label_id: str = ""
+    value: str = ""
+    source: str = ""
+    translation_id: str = ""
+    translation_en: str = ""
+
+
+class TashrifLughowiRow(BaseModel):
+    pronoun: str
+    text: str = ""
+    description: str = ""
+
+
+class TashrifAnalyzeResponse(BaseModel):
+    root: str
+    rumus: str
+    bab: int
+    classification: str = ""
+    meaning_pattern: str = ""
+    confidence: float = 0.0
+    root_meaning: dict[str, str] = {}
+    rumus_semantic: dict[str, str] = {}
+    verb_base: dict[str, str] = {}
+    ishthilahi_table: list[TashrifRow] = []
+    lughowi: dict[str, list[TashrifLughowiRow]] = {}
+    current_form: dict = {}
+
+
 # ── OCR engine & database singletons ────────────────────────────────
 ocr_engine = OCREngine(dpi=300)
 ocr_db = OCRDatabase()
@@ -698,6 +743,168 @@ def sarf_analyze(request: SarfAnalyzeRequest):
             masdars=raw.get("masdars", []),
         )
     except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Tashrif Ishthilahi (morphology) endpoint ────────────────────────────
+
+@app.post("/api/tashrif/analyze", response_model=TashrifAnalyzeResponse)
+def tashrif_analyze(request: TashrifAnalyzeRequest):
+    """Analyze an Arabic root using the Tashrif Ishthilahi system.
+
+    Returns the 8-column Ishthilahi table with Indonesian & English
+    translations, plus full Lughowi (pronoun) conjugation tables.
+
+    Uses the Python-based tashrif engine (Phases 1-4).
+    """
+    # Clean root
+    clean_root = re.sub(r'[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]', '', request.root)
+    if len(clean_root) < 3 or len(clean_root) > 4:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Root must be 3 or 4 Arabic letters, got '{clean_root}' ({len(clean_root)} chars)"
+        )
+
+    try:
+        from tashrif_pipeline import tashrif_analyze as pipeline_analyze
+        from tashrif_translate import translate_ishthilahi
+        from tashrif_lughowi import conjugate_lughowi
+        from tashrif_classifier import RUMUS_CLASSIFICATION
+
+        # Determine root length for default classification
+        root_len = len(clean_root) if clean_root else 0
+
+        # Step 1: Classify + generate the Ishthilahi table
+        pip_result = pipeline_analyze(
+            request.word or "",
+            root=clean_root,
+            bab=request.bab,
+        )
+
+        rumus = pip_result.get("rumus", "")
+        bab = pip_result.get("bab", 1) if request.bab is None else request.bab
+
+        if not rumus:
+            # No word form provided or classification failed.
+            # Fallback: infer Rumus from root length
+            if root_len == 4:
+                rumus = "4D"
+                bab = request.bab or 1
+            elif root_len == 3:
+                # Use provided bab, or default to 3A (فتح يفتح — most common)
+                bab = request.bab or 1
+                if bab == 1:
+                    rumus = "3A"
+                elif bab == 2:
+                    rumus = "3B"
+                elif bab == 3:
+                    rumus = "3C"
+                elif bab == 4:
+                    rumus = "3A"
+                elif bab == 5:
+                    rumus = "3B"
+                elif bab == 6:
+                    rumus = "3C"
+                else:
+                    rumus = "3A"
+            # Regenerate with explicit rumus + bab
+            from tashrif_generator import generate_ishthilahi
+            gen_result = generate_ishthilahi(clean_root, rumus, bab)
+            pip_result = {
+                "root": clean_root,
+                "rumus": rumus,
+                "bab": bab,
+                "classification": RUMUS_CLASSIFICATION.get(rumus, ""),
+                "ishthilahi_table": gen_result.get("table", []),
+                "ishthilahi_dict": gen_result.get("table_dict", {}),
+                "meaning_pattern": "",
+                "confidence": 0.7,
+                "current_form": {},
+                "stem": "",
+                "reasons": [f"Root-only classification: {root_len}-letter root → Rumus {rumus}"],
+            }
+
+        root_found = pip_result.get("root", clean_root) or clean_root
+
+        # Step 2: Add translations
+        table_dict = pip_result.get("ishthilahi_dict", {})
+        trans_result = translate_ishthilahi(
+            root_found, rumus, bab, table_dict,
+        ) if rumus else {}
+
+        # Step 3: Generate Lughowi conjugation
+        lughowi_result = {}
+        if rumus:
+            try:
+                lughowi_result = conjugate_lughowi(root_found, rumus, bab)
+            except Exception:
+                lughowi_result = {}
+
+        # Step 4: Build response — use the generated Ishthilahi table as-is
+        # (always shows the standard base 3rd person masculine singular forms)
+        table_rows = []
+        for row in pip_result.get("ishthilahi_table", []):
+            fn = row.get("form_name", "")
+            trans_id = ""
+            trans_en = ""
+            if trans_result:
+                td = trans_result.get("translations_dict", {})
+                trans_id = td.get("id", {}).get(fn, "")
+                trans_en = td.get("en", {}).get(fn, "")
+
+            table_rows.append(TashrifRow(
+                form_number=row.get("form_number", 0),
+                form_name=fn,
+                form_label_ar=row.get("form_label_ar", ""),
+                form_label_id=row.get("form_label_id", ""),
+                value=row.get("value", ""),
+                source=row.get("source", ""),
+                translation_id=trans_id,
+                translation_en=trans_en,
+            ))
+
+        # Build lughowi tables
+        lughowi_out: dict[str, list[TashrifLughowiRow]] = {}
+        for tense_key in ["past_tense", "present_tense", "present_subjunctive",
+                          "present_jussive", "imperative", "nahi"]:
+            rows = lughowi_result.get(tense_key, [])
+            lughowi_out[tense_key] = [
+                TashrifLughowiRow(
+                    pronoun=r.get("pronoun", ""),
+                    text=r.get("text", ""),
+                    description=r.get("description", ""),
+                ) for r in rows
+            ]
+
+        classification = pip_result.get("classification", "")
+        if not classification and rumus:
+            classification = RUMUS_CLASSIFICATION.get(rumus, f"Rumus {rumus}")
+
+        root_meaning = trans_result.get("root_meaning", {"id": "", "en": ""}) if trans_result else {"id": "", "en": ""}
+        rumus_semantic = trans_result.get("rumus_semantic", {"id": "", "en": ""}) if trans_result else {"id": "", "en": ""}
+        verb_base = trans_result.get("verb_base", {"id": "", "en": ""}) if trans_result else {"id": "", "en": ""}
+
+        return TashrifAnalyzeResponse(
+            root=root_found,
+            rumus=rumus,
+            bab=bab,
+            classification=classification,
+            meaning_pattern=pip_result.get("meaning_pattern", ""),
+            confidence=pip_result.get("confidence", 0.0),
+            root_meaning=root_meaning,
+            rumus_semantic=rumus_semantic,
+            verb_base=verb_base,
+            ishthilahi_table=table_rows,
+            lughowi=lughowi_out,
+            current_form=pip_result.get("current_form", {}),
+        )
+
+    except ImportError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Tashrif engine not available: {e}. Ensure all backend modules are installed."
+        )
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 

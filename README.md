@@ -16,6 +16,7 @@
 | **Word Gloss** | Word-by-word translation in **Indonesian** and **English** via built-in dictionaries (300+ entries each) |
 | **Full Translation** | Sentence-level translation to **Indonesian + English** via Google Translate (free), with **NLLB-200 fallback** |
 | **🔬 Sarf Morphology** | Click the 🔬 button on any word root to see **full verb conjugation tables** — past tense, present tense, subjunctive, jussive, and masdars (gerunds) — powered by the **[alsaydi/sarf](https://github.com/alsaydi/sarf)** library |
+| **📖 Tashrif Ishthilahi** | Click the 📖 button on any word root to see the **8-column Tashrif grid** (fi'il madhi, mudhari', amr, nahi, mashdar, ism fa'il, ism maf'ul, zamami) with **Indonesian + English translations** and **Lughowi pronoun conjugation tables** |
 | **Scholar Display** | Kitab-style layout with interlinear gloss, POS badges, and expandable detail table |
 
 ### 📄 Scan PDF (OCR)
@@ -113,6 +114,14 @@
 - **Full paradigm generation**: past, present, subjunctive, jussive, imperative + masdars
 - **Packaged as a CLI JAR** (`backend/sarf-cli.jar`) called from Python via subprocess
 
+### Tashrif Ishthilahi (Python)
+- **8-Column Tashrif grid**: fi'il madhi, fi'il mudhari', fi'il amr, fi'il nahi, mashdar, ism fa'il, ism maf'ul, zamami
+- **13 Rumus patterns** (3A–6): covers all augmented verb forms (fa''ala, fa'ala, af'ala, tafa''ala, tafa'ala, ifta'ala, infa'ala, if'alla, istaf'ala, etc.)
+- **Lughowi pronoun conjugation**: past, present, subjunctive, jussive, imperative, and prohibition (nahi) for all 14 Arabic pronouns
+- **Indonesian + English translation overlay**: per-column translations with Rumus-specific semantics (e.g., 4A = "membuat jadi", 5D = "ter-", 6 = "meminta")
+- **Root-only or full word classification**: provide a word form for precise Rumus detection, or just the root for a quick 8-column table
+- **Pure Python implementation**: no external dependencies, based on wazan pattern matching
+
 ### Frontend (TypeScript)
 - **Nuxt 3** + **Vue 3** — Modern web framework
 - **Tailwind CSS** — Utility-first styling
@@ -173,7 +182,9 @@ npm run dev
 
 Paste Arabic text → click **☾ Analisis Teks** → see word-by-word analysis with translation!
 
-Click **🔬** on any word root in the "Detail Lengkap" table to see full Sarf conjugation tables.
+Click **🔬** on any word root in the "Detail Lengkap" table to see full **Sarf conjugation tables**.
+
+Click **📖** on any word root to see the **Tashrif Ishthilahi 8-column grid** with Indonesian/English translations and Lughowi pronoun tables.
 
 For OCR: Switch to **📄 Scan PDF** tab → upload PDF → select page range → click **☾ Proses OCR**
 
@@ -251,6 +262,11 @@ camel/
 | `/api/ocr/delete/{pdf_id}` | POST | Soft-delete a PDF |
 | `/api/ocr/stats` | GET | OCR processing statistics |
 
+### Tashrif Ishthilahi Endpoint
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/tashrif/analyze` | POST | Analyze Arabic word/root: 8-column Tashrif Ishthilahi grid + Lughowi pronoun tables + ID/EN translations |
+
 ### Sarf Analyze Example
 
 ```bash
@@ -314,7 +330,7 @@ See detailed documentation in the `docs/` folder:
 - **[TRANSLATION_RECOMMENDATION.md](docs/TRANSLATION_RECOMMENDATION.md)** — Translation strategy
 - **[SARF_ASSESSMENT.md](docs/SARF_ASSESSMENT.md)** — Sarf morphology integration assessment
 
-### How Sarf Analysis Works
+### ### How Sarf Analysis Works
 
 1. User types Arabic text (e.g., "يكتب الطالب الدرس")
 2. CAMeL Tools analyzes each word — extracts **root** for verbs (e.g., "كتب" from "يكتب")
@@ -324,12 +340,36 @@ See detailed documentation in the `docs/` folder:
 6. The Sarf engine loads the XML root database, applies conjugation rules, and returns full JSON
 7. Frontend displays the conjugation tables in a modal dialog
 
+### How Tashrif Ishthilahi Works
+
+1. User clicks **📖** next to a root in the "Detail Lengkap" table
+2. Frontend calls `POST /api/tashrif/analyze` with the root
+3. Backend's **tashrif_pipeline.py** classifies the word/root into a **Rumus pattern** (e.g., 3C for simple triliteral verbs)
+4. **tashrif_generator.py** generates the 8-column Ishthilahi table (Arabic forms for fi'il madhi through zamami)
+5. **tashrif_translate.py** adds Indonesian and English translations using:
+   - Dictionary lookups for root meaning
+   - Rumus-specific semantic overlays (e.g., 4C = "men...kan")
+   - Form-level templates (e.g., madhi = "telah {base}")
+6. **tashrif_lughowi.py** generates the Lughowi pronoun conjugation tables (past, present, subjunctive, jussive, imperative, nahi)
+7. Frontend displays everything in a modal with the 8-column grid, pronoun tables, and translations
+
+### Architecture Difference: Sarf vs Tashrif
+
+| Aspect | 🔬 Sarf | 📖 Tashrif |
+|---|---|---|
+| **Engine** | Java (alsaydi/sarf JAR) | Pure Python |
+| **Output** | Verb conjugation by pronoun | 8-column Ishthilahi grid |
+| **Translations** | None | Indonesian + English per column |
+| **Lughowi tables** | Past, present, subjunctive, jussive | Past, present, subjunctive, jussive, imperative, nahi |
+| **Root coverage** | 24,000+ roots with bab classification | All 3-4 letter roots (pattern-based) |
+| **Dependencies** | Java 17+ required | Python only (no external deps) |
+
 ## 🎓 Use Cases
 
-1. **Students** reading kitab kuning — see every word's meaning and grammar, plus full verb conjugation
-2. **Teachers** preparing lesson materials — get harakat + translation + root analysis quickly
+1. **Students** reading kitab kuning — see every word's meaning and grammar, plus full verb conjugation & tashrif patterns
+2. **Teachers** preparing lesson materials — get harakat + translation + root analysis + tashrif tables for teaching
 3. **Researchers** working with Arabic manuscripts — OCR + translate scanned pages + analyze verb morphology
-4. **Self-learners** studying Arabic — understand sentence structure word by word, explore verb patterns
+4. **Self-learners** studying Arabic — understand sentence structure word by word, explore verb patterns with the Tashrif Ishthilahi grid
 
 ## 🧪 Development Roadmap
 
@@ -346,6 +386,7 @@ See detailed documentation in the `docs/` folder:
 | 9 | PWA (installable, offline manifest) | ✅ Complete |
 | 10 | Polish, error handling, batch operations | ✅ Complete |
 | **11** | **🔬 Sarf Morphology (verb conjugation)** | **✅ Complete** |
+| **12** | **📖 Tashrif Ishthilahi (8-column grid + translations)** | **✅ Complete** |
 
 ## 🤝 Contributing
 

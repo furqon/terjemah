@@ -148,10 +148,16 @@
                             <span style="font-family: 'Traditional Arabic', serif;">{{ word.root }}</span>
                             <button @click="analyzeRoot(word.root)" :disabled="sarfLoading"
                               class="text-xs cursor-pointer transition-all duration-200 hover:scale-110"
-                              style="opacity: 0.6; filter: drop-shadow(0 0 0 transparent);"
+                              style="opacity: 0.6;"
                               @mouseenter="$event.target.style.opacity = '1'"
                               @mouseleave="$event.target.style.opacity = '0.6'"
-                              :title="'Analisis morfologi: ' + word.root">🔬</button>
+                              :title="'Analisis morfologi Sarf: ' + word.root">🔬</button>
+                            <button @click="openTashrif(word.root, word.word)"
+                              class="text-xs cursor-pointer transition-all duration-200 hover:scale-110"
+                              style="opacity: 0.6;"
+                              @mouseenter="$event.target.style.opacity = '1'"
+                              @mouseleave="$event.target.style.opacity = '0.6'"
+                              :title="'Tashrif Ishthilahi: ' + word.root">📖</button>
                           </span>
                           <span v-else>—</span>
                         </td>
@@ -460,6 +466,9 @@
 
     </main>
 
+    <!-- ── Tashrif Modal ── -->
+    <TashrifModal :visible="tashrifModalVisible" :root="tashrifRoot" :word="tashrifWord" @close="tashrifModalVisible = false" />
+
     <footer class="text-center py-4">
       <div class="max-w-4xl mx-auto px-4">
         <div class="flex items-center justify-center gap-2 text-[10px] tracking-wider" style="color: #a0896a;">
@@ -533,6 +542,19 @@ const sarfResult = ref<SarfAnalyzeResponse | null>(null)
 const sarfLoading = ref(false)
 const sarfRoot = ref('')
 const sarfError = ref<string | null>(null)
+
+/* ── Tashrif (morphology) state ── */
+const tashrifRoot = ref('')
+const tashrifWord = ref('')
+const tashrifModalVisible = ref(false)
+
+function openTashrif(root: string, word?: string) {
+  const cleanRoot = root.replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g, '')
+  if (!cleanRoot || cleanRoot === '—' || cleanRoot.length < 3) return
+  tashrifRoot.value = cleanRoot
+  tashrifWord.value = word || ''
+  tashrifModalVisible.value = true
+}
 
 const config = useRuntimeConfig()
 
